@@ -1,5 +1,14 @@
 site_name: TaylorDash
 site_description: Local-only, event-driven visual mission control for home/lab projects
+
+# Documentation Versioning
+# Use 'mike' for version management with GitHub Pages
+# Deploy with: mike deploy --push --update-aliases 0.1 latest
+extra:
+  version:
+    provider: mike
+    default: latest
+
 theme:
   name: material
   features:
