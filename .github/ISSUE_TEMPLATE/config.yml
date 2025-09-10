@@ -3,6 +3,6 @@ contact_links:
   - name: Security Issues
     url: mailto:security@taylordash.dev
     about: Please report security vulnerabilities privately
-  - name: General Questions
+  - name: General Questions  
     url: https://github.com/11bztaylor/TaylorDashv1/discussions
     about: Ask questions and discuss with the community

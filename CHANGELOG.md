@@ -8,13 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Finalization and validation pack with governance files
+- SECURITY.md with incident response procedures
+- LICENSE (Apache-2.0) with patent grant
+- Enhanced issue templates with component selection
+- Repository audit and validation scripts
+- Observability documentation with metrics exposition
 - Versioning guidance and backup scripts
 - Documentation versioning with Mike
 - MinIO object versioning configuration  
 - PostgreSQL and VictoriaMetrics backup procedures
 
 ### Changed
+- Enhanced CONTRIBUTING.md with valid/invalid commit examples
 - Enhanced backup-restore documentation with multi-component strategy
+- Updated PR template to require Conventional Commits validation
 
 ## [0.1.0] - 2025-09-10
 
