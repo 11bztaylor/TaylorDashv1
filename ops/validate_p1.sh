@@ -7,14 +7,14 @@ set -e
 echo "=== TaylorDash Phase 1 Validation ==="
 
 echo "== Healthchecks =="
-docker compose ps
+docker-compose ps
 curl -fsS http://localhost/health/ready
 
 echo "== PR template & governance files exist =="
 bash ops/audit_repo.sh
 
 echo "== MQTT round-trip smoke =="
-docker compose exec -T mosquitto sh -lc 'mosquitto_pub -t tracker/test -m hello && sleep 1 && mosquitto_sub -t tracker/test -C 1 -W 3'
+docker-compose exec -T mosquitto sh -lc 'mosquitto_pub -t tracker/test -m hello && sleep 1 && mosquitto_sub -t tracker/test -C 1 -W 3'
 
 echo "== Metrics exposure =="
 curl -fsS http://localhost/metrics | head -n 20
