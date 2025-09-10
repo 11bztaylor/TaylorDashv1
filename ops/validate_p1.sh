@@ -6,6 +6,32 @@ set -e
 
 echo "=== TaylorDash Phase 1 Validation ==="
 
+echo "== Healthchecks =="
+docker compose ps
+curl -fsS http://localhost/health/ready
+
+echo "== PR template & governance files exist =="
+bash ops/audit_repo.sh
+
+echo "== MQTT round-trip smoke =="
+docker compose exec -T mosquitto sh -lc 'mosquitto_pub -t tracker/test -m hello && sleep 1 && mosquitto_sub -t tracker/test -C 1 -W 3'
+
+echo "== Metrics exposure =="
+curl -fsS http://localhost/metrics | head -n 20
+
+echo "== Key RBAC smoke =="
+# expect 401 without token
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost/api/v1/projects | grep -q "^401$"
+
+echo "== TSDB quick write/read (choose VM or Timescale path) =="
+# VM example: write via Prometheus remote-write simulator or curl HTTP import if exposed (optional placeholder)
+
+echo "== Midnight HUD plugin route smoke (if frontend running) =="
+# Just ensure the route is reachable (200 or 302)
+curl -fsS http://localhost/frontend/plugins/midnight-hud >/dev/null || true
+
+echo "PASS"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

@@ -63,6 +63,86 @@ git checkout v0.1.0
 git checkout -b restore-v010 v0.1.0
 ```
 
+## Multi-Component Backup Scripts
+
+### Database Backups
+
+```bash
+# Run PostgreSQL backup to MinIO
+./ops/backup_db.sh
+
+# Backup specific database
+./ops/backup_db.sh my_custom_db
+
+# Example output:
+# ✅ Backup complete!
+#    MinIO Path: taylordash/db-backups/v0.1.0_20250910_143000.dump
+#    Version ID: abc123def456
+#    SHA256: a1b2c3d4e5f6...
+```
+
+### VictoriaMetrics Backups
+
+```bash
+# Run VM backup to MinIO
+./ops/backup_vm.sh
+
+# Example output:
+# ✅ VictoriaMetrics backup complete!
+#    MinIO Path: taylordash/vm-backups/v0.1.0_20250910_143000
+#    Snapshot Used: 20250910143000-1A2B3C4D
+```
+
+## Restore Procedures
+
+### PostgreSQL Restore
+
+```bash
+# Download backup from MinIO
+mc cp taylordash/db-backups/v0.1.0_20250910_143000.dump ./restore.dump
+
+# Verify checksum
+sha256sum -c restore.dump.sha256
+
+# Restore to new database
+pg_restore -h localhost -U postgres -d taylordash_restored restore.dump
+
+# Or restore via Docker
+docker compose exec -T postgres pg_restore -U postgres -d taylordash_restored < restore.dump
+```
+
+### VictoriaMetrics Restore
+
+```bash
+# Restore VM data from MinIO backup
+vmrestore -src="s3://minio:9000/taylordash/vm-backups/v0.1.0_20250910_143000" \
+  -storageDataPath="/path/to/restored/vm-data" \
+  -s3.accessKey="$MINIO_ROOT_USER" \
+  -s3.secretKey="$MINIO_ROOT_PASSWORD"
+
+# Or via Docker
+docker run --rm -v vm_data_restored:/vm-data \
+  victoriametrics/vmrestore:latest \
+  -src="s3://minio:9000/taylordash/vm-backups/v0.1.0_20250910_143000" \
+  -storageDataPath="/vm-data"
+```
+
+### MinIO Object Restore
+
+```bash
+# List object versions
+mc ls --versions taylordash/docs/
+
+# Download specific version
+mc cp taylordash/docs/specs.pdf --version-id="abc123def456" ./specs_v1.pdf
+
+# Verify SHA256 checksum
+mc cat taylordash/docs/specs.pdf --version-id="abc123def456" | sha256sum
+
+# Restore version as current
+mc cp taylordash/docs/specs.pdf --version-id="abc123def456" taylordash/docs/specs.pdf
+```
+
 ## Backup Triggers
 
 Create backups at these milestones:

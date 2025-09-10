@@ -7,33 +7,38 @@ assignees: 11bztaylor
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Environment**
+- TaylorDash version: [e.g. v0.1.0]
+- Environment: [e.g. Docker Compose, local development]
+- OS: [e.g. Windows 11, Ubuntu 22.04]
+- Browser: [e.g. Chrome 120, Firefox 121]
 
-**To Reproduce**
-Steps to reproduce the behavior:
+**Steps to Reproduce**
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**
+**Expected Behavior**
 A clear and concise description of what you expected to happen.
 
-**Actual behavior**
+**Actual Behavior**
 A clear and concise description of what actually happened.
 
 **Logs**
 ```
-(paste relevant logs here)
+(paste relevant logs here - sanitize any secrets)
 ```
 
 **Component**
-Which component is affected (API, UI, MQTT, Database, etc.)?
+Which component is affected?
+- [ ] API/Backend
+- [ ] UI/Frontend  
+- [ ] MQTT/Events
+- [ ] Database
+- [ ] Docker/Infrastructure
+- [ ] Documentation
+- [ ] Other: ___________
 
-**Version**
-- TaylorDash version: [e.g. v0.1.0]
-- Environment: [e.g. Docker, local development]
-
-**Additional context**
+**Additional Context**
 Add any other context about the problem here.
