@@ -20,6 +20,13 @@ As a [type of user], I want [some goal] so that [some reason].
 
 **Affected Views/Contracts**
 Which UI views or API contracts would change?
+- [ ] Dashboard/UI views
+- [ ] API endpoints
+- [ ] Event schemas
+- [ ] Database schema
+- [ ] Plugin interfaces
+- [ ] Documentation
+- [ ] Other: ___________
 
-**Additional context**
+**Additional Context**
 Add any other context, mockups, or examples about the feature request here.
