@@ -1,0 +1,52 @@
+site_name: TaylorDash
+site_description: Local-only, event-driven visual mission control for home/lab projects
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.tabs
+    - navigation.tracking
+    - toc.integrate
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+plugins:
+  - search
+nav:
+  - Home: index.md
+  - Tutorials:
+      - First Visual Plan: how-to/tutorials/first-visual-plan.md
+      - Create a View Layout: how-to/tutorials/create-view-layout.md
+  - How-tos:
+      - Runbook: runbook.md
+  - Orchestrator & Agents:
+      - Primary Orchestrator: orchestrator.md
+      - Using the Agents: agents/usage.md
+      - Run Journal (Schema): specs/run-journal.md
+      - Resume Brief (Schema): specs/resume-brief.md
+      - Agent Roster Example: reference/agents.json.example
+  - Reference:
+      - API: specs/api.md
+      - Events: specs/events.md
+      - Views & Tabs: specs/views.md
+      - Validation Gates: validation-gates.md
+      - Glossary: reference/glossary.md
+      - ADRs:
+          - "ADR 0001: Event Bus & Add-only Frame": adr/0001-adopt-event-bus-and-add-only-frame.md
+          - "ADR 0002: Storage Split & TSDB Defaults": adr/0002-storage-split-and-tsdb-defaults.md
+          - "ADR 0003: Observability Stack": adr/0003-observability-stack-otel-prometheus.md
+          - "ADR 0004: RBAC with Keycloak OIDC": adr/0004-rbac-and-authn-with-keycloak-oidc.md
+          - "ADR 0005: Multi-View UI": adr/0005-multi-view-ui-and-react-flow-canvas.md
+  - Explanation:
+      - Architecture: architecture.md
+  - Security:
+      - Security Model: security.md
+  - Storage:
+      - Storage Design: storage.md
+  - Observability:
+      - Observability: observability.md

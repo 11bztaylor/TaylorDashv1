@@ -1,0 +1,44 @@
+# Node / frontend
+node_modules/
+frontend/.next/
+frontend/dist/
+frontend/build/
+*.log
+pnpm-lock.yaml
+
+# Python / backend
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.env.*
+!.env.example
+
+# Docker artifacts and data volumes (keep state outside repo)
+pg-data/
+vm-data/
+ts-data/
+minio-data/
+prom-data/
+grafana-data/
+docker/*.pid
+*.pid
+
+# Coverage / reports
+coverage/
+.pytest_cache/
+reports/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*.code-workspace
+
+# Static build outputs and site exports
+/site/
+
+# Temporary test files
+docs/ops/_lint_probe.md
+bad.env

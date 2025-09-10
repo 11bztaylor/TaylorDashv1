@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "orchestrator": {
+    "name": "TaylorDash Orchestrator",
+    "policies": {
+      "add_only": true,
+      "docs_required": true,
+      "trace_required": true
+    }
+  },
+  "agents": [
+    {
+      "name": "project_manager",
+      "tools": ["planner", "adr_writer"],
+      "rbac": ["admin"],
+      "inputs": ["snapshot", "backlog", "failures"],
+      "outputs": ["session_plan", "acceptance_criteria"]
+    },
+    {
+      "name": "architecture_contracts",
+      "tools": ["openapi_gen", "jsonschema_lint"],
+      "rbac": ["admin","maintainer"],
+      "inputs": ["adrs", "api_diffs", "event_diffs"],
+      "outputs": ["openapi.yaml", "event_schemas"]
+    },
+    {
+      "name": "infra_compose",
+      "tools": ["healthcheck_gen"],
+      "rbac": ["admin"],
+      "inputs": ["service_map"],
+      "outputs": ["docker-compose.yml", "health_scripts"]
+    },
+    {
+      "name": "backend",
+      "tools": ["fastapi_gen", "mqtt_client", "tsdb_adapter", "minio_client"],
+      "rbac": ["admin","maintainer"],
+      "inputs": ["api_contracts", "event_contracts"],
+      "outputs": ["service_code", "metrics", "health_endpoints"]
+    },
+    {
+      "name": "observability",
+      "tools": ["otel_instrument", "prom_rules", "grafana_panels"],
+      "rbac": ["admin","maintainer"],
+      "inputs": ["metrics_candidates", "trace_points"],
+      "outputs": ["instrumentation", "dashboards"]
+    },
+    {
+      "name": "security_rbac",
+      "tools": ["keycloak_admin", "traefik_hsts", "mosquitto_tls"],
+      "rbac": ["admin"],
+      "inputs": ["security_adrs"],
+      "outputs": ["realm_export", "conf_snippets", "checklist"]
+    },
+    {
+      "name": "qa_tests",
+      "tools": ["pytest_asyncio", "bash_runner"],
+      "rbac": ["admin","maintainer"],
+      "inputs": ["acceptance_criteria"],
+      "outputs": ["test_reports", "validate_p1.sh"]
+    },
+    {
+      "name": "scribe_docs",
+      "tools": ["mkdocs_writer", "adr_manager", "minio_uploader"],
+      "rbac": ["admin","maintainer","viewer"],
+      "inputs": ["diffs","pr_links","journal"],
+      "outputs": ["docs", "adr_updates", "resume_brief"]
+    }
+  ]
+}

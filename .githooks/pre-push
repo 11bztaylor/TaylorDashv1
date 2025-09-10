@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Gate network pushes behind validation
+if [ -x "./ops/validate_p1.sh" ]; then
+  ./ops/validate_p1.sh
+fi
+echo "[pre-push] Validation OK; pushing allowed."
