@@ -33,7 +33,7 @@ TaylorDash is a visual project command center. You describe what you want; the s
 - **Add-only UI**: plugin routes and a Midnight HUD example (draggable glass widgets with persisted state).
 - **Docs that scale**: [Diátaxis](https://diataxis.fr/) split (tutorials / how-tos / reference / explanation).
 
-## 🏗️ Architecture (Phase-1)
+## 🚀 Architecture (Phase-1)
 
 ```mermaid
 flowchart LR
