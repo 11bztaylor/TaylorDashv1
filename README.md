@@ -115,6 +115,51 @@ docker compose up -d
 bash ops/validate_p1.sh     # healthchecks, RBAC 401, metrics, MQTT echo, plugin route smoke
 ```
 
+## 👀 How to see it
+
+TaylorDash provides a comprehensive visual shell with four main tabs for different aspects of system management:
+
+### Status Tab
+Service health monitoring dashboard providing real-time observability into your TaylorDash deployment. Monitor system metrics, service availability, and operational alerts in a unified interface.
+
+**Features:**
+- Real-time service health indicators
+- OpenTelemetry metrics visualization  
+- System performance dashboard
+- Alert and notification management
+
+### Canvas Tab
+Interactive visual workflow designer powered by React Flow. Create, edit, and visualize system architectures, project workflows, and component relationships through an intuitive drag-and-drop interface.
+
+**Features:**
+- Drag-and-drop node manipulation
+- Visual workflow design
+- Interactive system architecture mapping
+- Component relationship visualization
+
+### Projects Tab
+Comprehensive project management interface with role-based access control. Organize projects, track progress, and collaborate with team members through a purpose-built project management system.
+
+**Features:**
+- Project creation and organization
+- Task tracking and progress monitoring
+- Role-based access control (RBAC-protected)
+- Collaboration and resource management
+
+**Access Control:**
+- **viewer**: Read-only access to assigned projects
+- **maintainer**: Project creation and task management
+- **admin**: Full project management capabilities
+
+### Plugins Tab
+Plugin ecosystem access portal for discovering, installing, and managing TaylorDash extensions. Explore the plugin marketplace and extend TaylorDash functionality with custom integrations.
+
+**Features:**
+- Plugin marketplace browsing
+- Installation and configuration management
+- Plugin lifecycle control
+- Access control and permissions management
+
 ## 🖥️ Midnight HUD Plugin (example)
 
 A "floating cards" HUD with midnight/cyber glass theme, draggable/minimizable/pinnable, state persisted across navigation. Lives at `examples/midnight-hud/` and mounts in TaylorDash under **Plugins → Midnight HUD**. (Built with React + [Tailwind](https://tailwindcss.com/); React Router for persistence demo.)
