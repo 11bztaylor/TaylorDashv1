@@ -90,6 +90,17 @@ flowchart LR
 - **Security**: OIDC, short presigned URLs for downloads, strict headers at the edge.
 - **Add-only evolution**: adapters and plugins—never mutate the frame.
 
+## ▶ Resume in 1 minute
+
+**Returning to TaylorDash?** Get back up to speed instantly:
+
+```bash
+bash ops/resume.sh
+# then open https://tracker.local
+```
+
+This loads your last session brief, starts all services, and opens the dashboard.
+
 ## 🚀 Quickstart
 
 **Prereqs**: Docker + Docker Compose, hosts entry (e.g., `tracker.local`), and your `.env` set.

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Session freeze bundle (resume.sh, smoke_ui.sh, freeze.sh)
+- RESUME_BRIEF.md & NEXT_SESSION_PLAN.md
 - Finalization and validation pack with governance files
 - SECURITY.md with incident response procedures
 - LICENSE (Apache-2.0) with patent grant
