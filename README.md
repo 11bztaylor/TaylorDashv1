@@ -44,16 +44,16 @@ flowchart LR
   end
 
   subgraph Edge
-    T[Traefik\nTLS+HSTS]
+    T[Traefik<br/>TLS+HSTS]
   end
 
   subgraph Core
-    B[FastAPI Async Backend\n/health /metrics /api]
-    K[Keycloak OIDC\nRBAC]
-    Q[MQTT Broker\n(Mosquitto)]
+    B[FastAPI Async Backend<br/>/health /metrics /api]
+    K[Keycloak OIDC<br/>RBAC]
+    Q[MQTT Broker<br/>(Mosquitto)]
     P[("Postgres")]
     S[("TSDB: VictoriaMetrics or Timescale")]
-    M[("MinIO\nversioned objects")]
+    M[("MinIO<br/>versioned objects")]
     PR[Prometheus]
   end
 
