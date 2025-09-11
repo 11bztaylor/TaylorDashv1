@@ -5,12 +5,14 @@ import asyncio
 import json
 import logging
 import os
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Histogram
 from starlette.responses import Response
 import uvicorn
@@ -26,6 +28,31 @@ http_request_duration = Histogram('http_request_duration_seconds', 'HTTP request
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Pydantic Models for Projects CRUD
+class ProjectCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255, description="Project name")
+    description: Optional[str] = Field(None, max_length=1000, description="Project description")
+    status: str = Field("planning", description="Project status")
+    owner_id: Optional[str] = Field(None, description="Owner ID")
+    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Additional metadata")
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Project name")
+    description: Optional[str] = Field(None, max_length=1000, description="Project description")
+    status: Optional[str] = Field(None, description="Project status")
+    owner_id: Optional[str] = Field(None, description="Owner ID")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+
+class ProjectResponse(BaseModel):
+    id: str = Field(..., description="Project ID")
+    name: str = Field(..., description="Project name")
+    description: Optional[str] = Field(None, description="Project description")
+    status: str = Field(..., description="Project status")
+    owner_id: Optional[str] = Field(None, description="Owner ID")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -260,6 +287,12 @@ async def get_projects():
                     project['id'] = str(project['id'])
                 if project.get('owner_id'):
                     project['owner_id'] = str(project['owner_id'])
+                # Parse metadata JSON string back to dict
+                if project.get('metadata'):
+                    if isinstance(project['metadata'], str):
+                        project['metadata'] = json.loads(project['metadata'])
+                else:
+                    project['metadata'] = {}
             
             return {"projects": projects, "count": len(projects)}
     except Exception as e:
@@ -291,6 +324,12 @@ async def get_project(project_id: str):
                 project['id'] = str(project['id'])
             if project.get('owner_id'):
                 project['owner_id'] = str(project['owner_id'])
+            # Parse metadata JSON string back to dict
+            if project.get('metadata'):
+                if isinstance(project['metadata'], str):
+                    project['metadata'] = json.loads(project['metadata'])
+            else:
+                project['metadata'] = {}
             
             return project
     except ValueError:
@@ -300,6 +339,213 @@ async def get_project(project_id: str):
     except Exception as e:
         logger.error(f"Failed to fetch project {project_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch project")
+
+@app.post("/api/v1/projects", status_code=status.HTTP_201_CREATED, response_model=ProjectResponse)
+async def create_project(project: ProjectCreate):
+    """Create a new project"""
+    try:
+        pool = await get_db_pool()
+        new_project_id = str(uuid.uuid4())
+        current_time = datetime.now(timezone.utc)
+        
+        async with pool.acquire() as conn:
+            # Insert the new project
+            row = await conn.fetchrow("""
+                INSERT INTO projects (id, name, description, status, owner_id, metadata, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+                RETURNING id, name, description, status, owner_id, metadata, created_at, updated_at
+            """, 
+                new_project_id,
+                project.name,
+                project.description,
+                project.status,
+                project.owner_id,
+                json.dumps(project.metadata),
+                current_time
+            )
+            
+            # Convert row to dict and format for response
+            created_project = dict(row)
+            created_project['id'] = str(created_project['id'])
+            if created_project.get('owner_id'):
+                created_project['owner_id'] = str(created_project['owner_id'])
+            # Parse metadata JSON string back to dict
+            if created_project.get('metadata'):
+                if isinstance(created_project['metadata'], str):
+                    created_project['metadata'] = json.loads(created_project['metadata'])
+            else:
+                created_project['metadata'] = {}
+            
+            # Publish MQTT event for project creation
+            try:
+                mqtt_processor = await get_mqtt_processor()
+                await mqtt_processor.publish_event(
+                    topic="tracker/events/projects/created",
+                    kind="project_created",
+                    payload={
+                        "project_id": created_project['id'],
+                        "name": created_project['name'],
+                        "status": created_project['status'],
+                        "created_by": created_project.get('owner_id'),
+                        "timestamp": current_time.isoformat()
+                    }
+                )
+            except Exception as mqtt_error:
+                logger.warning(f"Failed to publish project creation event: {mqtt_error}")
+            
+            return created_project
+            
+    except Exception as e:
+        logger.error(f"Failed to create project: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create project")
+
+@app.put("/api/v1/projects/{project_id}", response_model=ProjectResponse)
+async def update_project(project_id: str, project_update: ProjectUpdate):
+    """Update an existing project"""
+    try:
+        pool = await get_db_pool()
+        current_time = datetime.now(timezone.utc)
+        
+        async with pool.acquire() as conn:
+            # First check if project exists
+            existing = await conn.fetchrow("SELECT id FROM projects WHERE id = $1", project_id)
+            if not existing:
+                raise HTTPException(status_code=404, detail="Project not found")
+            
+            # Build dynamic update query based on provided fields
+            update_fields = []
+            params = [project_id]
+            param_count = 1
+            
+            if project_update.name is not None:
+                param_count += 1
+                update_fields.append(f"name = ${param_count}")
+                params.append(project_update.name)
+            
+            if project_update.description is not None:
+                param_count += 1
+                update_fields.append(f"description = ${param_count}")
+                params.append(project_update.description)
+                
+            if project_update.status is not None:
+                param_count += 1
+                update_fields.append(f"status = ${param_count}")
+                params.append(project_update.status)
+                
+            if project_update.owner_id is not None:
+                param_count += 1
+                update_fields.append(f"owner_id = ${param_count}")
+                params.append(project_update.owner_id)
+                
+            if project_update.metadata is not None:
+                param_count += 1
+                update_fields.append(f"metadata = ${param_count}")
+                params.append(json.dumps(project_update.metadata))
+            
+            # Always update the updated_at timestamp
+            param_count += 1
+            update_fields.append(f"updated_at = ${param_count}")
+            params.append(current_time)
+            
+            if not update_fields:
+                raise HTTPException(status_code=400, detail="No fields to update")
+            
+            query = f"""
+                UPDATE projects 
+                SET {', '.join(update_fields)}
+                WHERE id = $1
+                RETURNING id, name, description, status, owner_id, metadata, created_at, updated_at
+            """
+            
+            row = await conn.fetchrow(query, *params)
+            
+            # Convert row to dict and format for response
+            updated_project = dict(row)
+            updated_project['id'] = str(updated_project['id'])
+            if updated_project.get('owner_id'):
+                updated_project['owner_id'] = str(updated_project['owner_id'])
+            # Parse metadata JSON string back to dict
+            if updated_project.get('metadata'):
+                if isinstance(updated_project['metadata'], str):
+                    updated_project['metadata'] = json.loads(updated_project['metadata'])
+            else:
+                updated_project['metadata'] = {}
+                
+            # Publish MQTT event for project update
+            try:
+                mqtt_processor = await get_mqtt_processor()
+                await mqtt_processor.publish_event(
+                    topic="tracker/events/projects/updated",
+                    kind="project_updated",
+                    payload={
+                        "project_id": updated_project['id'],
+                        "name": updated_project['name'],
+                        "status": updated_project['status'],
+                        "updated_by": updated_project.get('owner_id'),
+                        "timestamp": current_time.isoformat(),
+                        "updated_fields": [field.split(' = ')[0] for field in update_fields if 'updated_at' not in field]
+                    }
+                )
+            except Exception as mqtt_error:
+                logger.warning(f"Failed to publish project update event: {mqtt_error}")
+            
+            return updated_project
+            
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid project ID format")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update project {project_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update project")
+
+@app.delete("/api/v1/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_project(project_id: str):
+    """Delete a project"""
+    try:
+        pool = await get_db_pool()
+        
+        async with pool.acquire() as conn:
+            # First check if project exists and get its info for the event
+            existing_project = await conn.fetchrow(
+                "SELECT id, name, status, owner_id FROM projects WHERE id = $1", 
+                project_id
+            )
+            if not existing_project:
+                raise HTTPException(status_code=404, detail="Project not found")
+            
+            # Delete the project (this will cascade to components and tasks due to foreign key constraints)
+            result = await conn.execute("DELETE FROM projects WHERE id = $1", project_id)
+            
+            if result == "DELETE 0":
+                raise HTTPException(status_code=404, detail="Project not found")
+            
+            # Publish MQTT event for project deletion
+            try:
+                mqtt_processor = await get_mqtt_processor()
+                await mqtt_processor.publish_event(
+                    topic="tracker/events/projects/deleted",
+                    kind="project_deleted",
+                    payload={
+                        "project_id": str(existing_project['id']),
+                        "name": existing_project['name'],
+                        "status": existing_project['status'],
+                        "deleted_by": str(existing_project['owner_id']) if existing_project['owner_id'] else None,
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                )
+            except Exception as mqtt_error:
+                logger.warning(f"Failed to publish project deletion event: {mqtt_error}")
+            
+            return  # 204 No Content
+            
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid project ID format")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete project {project_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete project")
 
 @app.get("/api/v1/projects/{project_id}/components")
 async def get_project_components(project_id: str):
