@@ -51,9 +51,9 @@ flowchart LR
     B[FastAPI Async Backend<br/>/health /metrics /api]
     K[Keycloak OIDC<br/>RBAC]
     Q[MQTT Broker<br/>(Mosquitto)]
-    P[(Postgres)]
-    S[(TSDB: VictoriaMetrics or Timescale)]
-    M[(MinIO<br/>versioned objects)]
+    P[Postgres<br/>Database]
+    S[TSDB<br/>VictoriaMetrics/Timescale]
+    M[MinIO<br/>Object Storage]
     PR[Prometheus]
   end
 
