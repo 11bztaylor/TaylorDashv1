@@ -63,39 +63,153 @@ export const PLUGINS: Plugin[] = [
 ];
 ```
 
-## Iframe vs Micro-Frontend Mounting
+## Plugin Surfacing Architecture
 
-### Iframe Embedding (Current)
-- **Pros**: Complete isolation, security sandboxing, cross-technology support
-- **Cons**: Limited parent-child communication, separate context
-- **Use Case**: External plugins, third-party integrations
+### Current Implementation: Iframe-Based Plugin System
+
+TaylorDash currently implements plugin surfacing through iframe embedding, providing secure isolation while enabling rich plugin functionality. This approach ensures plugins operate in sandboxed environments without compromising core application security.
+
+#### Iframe Embedding Benefits
+- **Complete Isolation**: Plugins run in separate execution contexts, preventing interference with core application
+- **Security Sandboxing**: Built-in browser security model with configurable sandbox attributes
+- **Cross-Technology Support**: Plugins can be built with any frontend framework or technology stack
+- **Fault Tolerance**: Plugin crashes don't affect the main application
+- **Resource Isolation**: Memory and CPU usage contained within plugin boundaries
+
+#### Plugin Registry System
+The plugin registry maintains a centralized catalog of available plugins with metadata including permissions, versions, and mounting configurations:
+
+```typescript
+export interface PluginRegistryEntry {
+  id: string;
+  name: string;
+  kind: 'ui' | 'data' | 'integration';
+  path: string;
+  iframeSrc: string;           // Plugin serving URL
+  sandboxAttributes: string[]; // Security sandbox configuration
+  permissions: string[];       // Required RBAC permissions
+  version: string;
+  description: string;
+  healthEndpoint?: string;     // Optional health check URL
+}
+```
+
+#### Iframe Implementation Details
 
 ```tsx
+// Plugin mounting with security configuration
 <iframe
-  src="http://localhost:5173"
+  src={plugin.iframeSrc}
   className="w-full h-full border-0"
-  title="Plugin Name"
+  title={plugin.name}
   sandbox="allow-scripts allow-same-origin allow-forms"
+  allow="fullscreen"
+  referrerPolicy="strict-origin-when-cross-origin"
+  onLoad={handlePluginLoad}
+  onError={handlePluginError}
 />
 ```
 
-### Micro-Frontend (Future)
-- **Pros**: Shared context, better integration, performance
-- **Cons**: Technology constraints, potential conflicts
-- **Use Case**: First-party plugins, core extensions
+**Sandbox Attributes:**
+- `allow-scripts`: Enable JavaScript execution within plugin
+- `allow-same-origin`: Allow same-origin requests for plugin assets
+- `allow-forms`: Enable form submission within plugin
+- Additional restrictions prevent top-level navigation and popup windows
 
-```tsx
+### Future Migration: Micro-Frontend Architecture
+
+TaylorDash is architected to support future migration to micro-frontend patterns for enhanced integration while maintaining the add-only contract principle.
+
+#### Micro-Frontend Benefits
+- **Shared Context**: Direct access to TaylorDash state and services
+- **Better Integration**: Native React component integration
+- **Performance**: Reduced overhead compared to iframe embedding
+- **Developer Experience**: Shared build tools and development environment
+
+#### Migration Strategy
+```typescript
+// Future micro-frontend implementation
 import { PluginComponent } from '@plugins/midnight-hud';
-<PluginComponent {...props} />
+
+const MicroFrontendPlugin: React.FC<PluginProps> = ({ plugin, ...props }) => {
+  return (
+    <PluginBoundary plugin={plugin}>
+      <PluginComponent {...props} />
+    </PluginBoundary>
+  );
+};
 ```
 
-## Add-Only Constraints
+#### Hybrid Approach
+The system will support both iframe and micro-frontend mounting simultaneously:
+
+```typescript
+const PluginRenderer: React.FC<{ plugin: Plugin }> = ({ plugin }) => {
+  switch (plugin.mountingStrategy) {
+    case 'iframe':
+      return <IframePlugin plugin={plugin} />;
+    case 'microfrontend':
+      return <MicroFrontendPlugin plugin={plugin} />;
+    default:
+      return <IframePlugin plugin={plugin} />; // Default fallback
+  }
+};
+```
+
+## Add-Only Contract for Plugins
 
 ### Core Principles
-1. **No Core Modifications**: Plugins cannot alter existing TaylorDash routes or components
-2. **Additive Routes**: New routes only, no overrides
-3. **Isolated State**: Plugin state separate from core application
-4. **Permission Boundaries**: RBAC enforcement at plugin boundaries
+The add-only contract ensures TaylorDash maintains stability and security while enabling unlimited extensibility through plugins.
+
+1. **No Core Modifications**: Plugins cannot alter existing TaylorDash routes, components, or core functionality
+2. **Additive Routes**: Plugins may only add new routes, never override or modify existing ones
+3. **Isolated State**: Plugin state remains completely separate from core application state
+4. **Permission Boundaries**: RBAC enforcement strictly applied at all plugin interaction boundaries
+5. **Resource Constraints**: Plugins operate within defined resource limits and cannot affect core performance
+
+### Contract Enforcement
+The add-only contract is enforced through multiple layers:
+
+#### Runtime Isolation
+- **Iframe Sandboxing**: Prevents direct DOM manipulation of parent application
+- **Origin Separation**: Plugins served from different origins prevent cross-origin access
+- **Resource Limits**: CPU and memory usage monitoring and throttling
+
+#### Development-Time Constraints
+- **Plugin Registry Validation**: All plugins must register through approved registry channels
+- **Route Conflict Detection**: Automatic detection and rejection of conflicting route definitions
+- **Permission Validation**: Compile-time verification of plugin permission requirements
+
+#### API Surface Control
+```typescript
+// Approved plugin API surface
+interface PluginAPI {
+  // READ-ONLY access to application state
+  readonly context: {
+    user: UserInfo;
+    theme: ThemeConfig;
+    permissions: string[];
+  };
+  
+  // LIMITED event publishing (plugin-scoped topics only)
+  publishEvent: (topic: `plugin.${string}`, data: unknown) => void;
+  
+  // NO direct access to:
+  // - Core routing
+  // - Global state modification
+  // - Other plugin state
+  // - System configuration
+}
+```
+
+### Plugin Lifecycle Management
+All plugins operate under strict lifecycle controls that enforce the add-only contract:
+
+1. **Registration**: Plugins must declare all capabilities and permissions upfront
+2. **Validation**: Automated verification of contract compliance before activation
+3. **Isolation**: Runtime enforcement of resource and access boundaries
+4. **Monitoring**: Continuous monitoring for contract violations
+5. **Cleanup**: Automatic cleanup and resource reclamation when plugins are removed
 
 ### Implementation Guidelines
 
