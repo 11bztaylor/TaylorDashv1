@@ -10,16 +10,34 @@ logger = logging.getLogger(__name__)
 # Global connection pool
 db_pool: Optional[asyncpg.Pool] = None
 
-async def init_db_pool(database_url: str) -> asyncpg.Pool:
-    """Initialize database connection pool"""
+async def init_db_pool(database_url: str, retries: int = 5, delay: float = 2.0) -> asyncpg.Pool:
+    """Initialize database connection pool with retry logic"""
+    import asyncio
+    
     global db_pool
-    db_pool = await asyncpg.create_pool(database_url, min_size=5, max_size=20)
     
-    # Run migrations
-    await run_migrations()
-    
-    logger.info("Database pool initialized")
-    return db_pool
+    for attempt in range(retries):
+        try:
+            logger.info(f"Attempting to connect to database (attempt {attempt + 1}/{retries})")
+            db_pool = await asyncpg.create_pool(database_url, min_size=5, max_size=20)
+            
+            # Test the connection
+            async with db_pool.acquire() as conn:
+                await conn.execute("SELECT 1")
+            
+            # Run migrations
+            await run_migrations()
+            
+            logger.info("Database pool initialized successfully")
+            return db_pool
+        except Exception as e:
+            logger.warning(f"Database connection attempt {attempt + 1} failed: {e}")
+            if attempt < retries - 1:
+                logger.info(f"Retrying in {delay} seconds...")
+                await asyncio.sleep(delay)
+            else:
+                logger.error("All database connection attempts failed")
+                raise
 
 async def get_db_pool() -> asyncpg.Pool:
     """Get global database pool"""

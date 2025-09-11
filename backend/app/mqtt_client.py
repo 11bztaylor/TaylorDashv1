@@ -9,8 +9,7 @@ import uuid
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
-import asyncio_mqtt
-from paho.mqtt.client import MQTTMessage
+import aiomqtt
 from opentelemetry import trace
 from prometheus_client import Counter, Histogram, Gauge
 import asyncpg
@@ -65,7 +64,7 @@ class MQTTEventProcessor:
     
     async def _connect_and_process(self):
         """Connect to MQTT broker and process messages"""
-        async with asyncio_mqtt.Client(
+        async with aiomqtt.Client(
             hostname=self.broker_host,
             port=self.broker_port,
             username=self.username,
@@ -83,10 +82,10 @@ class MQTTEventProcessor:
             async for message in client.messages:
                 await self._process_message(message)
                 
-    async def _process_message(self, message: MQTTMessage):
+    async def _process_message(self, message):
         """Process incoming MQTT message with DLQ on failure"""
         start_time = time.time()
-        topic = message.topic.value
+        topic = str(message.topic)
         
         with tracer.start_as_current_span("mqtt.process_message") as span:
             span.set_attributes({

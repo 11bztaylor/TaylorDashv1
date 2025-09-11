@@ -46,7 +46,7 @@ def init_telemetry():
     metrics.set_meter_provider(MeterProvider(resource=resource))
     
     # Auto-instrument FastAPI
-    FastAPIInstrumentor.instrument()
+    FastAPIInstrumentor().instrument()
     
     # Auto-instrument AsyncPG
     AsyncPGInstrumentor().instrument()
