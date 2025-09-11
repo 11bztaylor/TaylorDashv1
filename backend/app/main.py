@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager
 from typing import Dict, Any, List
 
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Histogram
 from starlette.responses import Response
 import uvicorn
@@ -16,6 +15,9 @@ import uvicorn
 from .otel import init_telemetry
 from .database import init_db_pool, close_db_pool, get_db_pool
 from .mqtt_client import init_mqtt_processor, get_mqtt_processor
+from .health_stack import get_stack_health
+from .routers import projects
+from .core.cors import configure_cors
 
 # Metrics
 http_requests_total = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
@@ -64,13 +66,10 @@ app = FastAPI(
 )
 
 # CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+configure_cors(app)
+
+# Include routers
+app.include_router(projects.router)
 
 @app.get("/health/live")
 async def health_live():
@@ -95,6 +94,16 @@ async def health_ready():
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
         raise HTTPException(status_code=503, detail="Service not ready")
+
+@app.get("/api/v1/health/stack")
+async def health_stack():
+    """Stack health check - probe all services"""
+    try:
+        result = await get_stack_health()
+        return result
+    except Exception as e:
+        logger.error(f"Stack health check failed: {e}")
+        raise HTTPException(status_code=500, detail="Stack health check failed")
 
 @app.get("/metrics")
 async def metrics():

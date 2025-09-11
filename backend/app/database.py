@@ -82,7 +82,7 @@ async def run_migrations():
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 name VARCHAR(255) NOT NULL,
                 description TEXT,
-                status VARCHAR(50) DEFAULT 'active',
+                status VARCHAR(50) DEFAULT 'new',
                 owner_id UUID,
                 metadata JSONB DEFAULT '{}',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
