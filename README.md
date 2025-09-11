@@ -33,39 +33,18 @@ TaylorDash is a visual project command center. You describe what you want; the s
 - **Add-only UI**: plugin routes and a Midnight HUD example (draggable glass widgets with persisted state).
 - **Docs that scale**: [Diátaxis](https://diataxis.fr/) split (tutorials / how-tos / reference / explanation).
 
-## 🚀 Architecture (Phase-1)
+## 🚀🚀 Architecture (Phase-1)
 
 ```mermaid
-flowchart LR
-  subgraph Client
-    A[React + Tailwind App]
-    V[Views/Tabs + React Flow]
-    H[Midnight HUD Plugin]
-  end
-
-  subgraph Edge
-    T[Traefik<br/>TLS+HSTS]
-  end
-
-  subgraph Core
-    B[FastAPI Async Backend<br/>/health /metrics /api]
-    K[Keycloak OIDC<br/>RBAC]
-    Q[MQTT Broker<br/>(Mosquitto)]
-    P[Postgres<br/>Database]
-    S[TSDB<br/>VictoriaMetrics/Timescale]
-    M[MinIO<br/>Object Storage]
-    PR[Prometheus]
-  end
-
-  A -->|OIDC| K
-  A --> T --> B
-  V --> A
-  H --> A
-  B <--> Q
-  B <--> P
-  B <--> S
-  B <--> M
-  PR --> B
+graph LR
+    A[React Frontend] --> B[Traefik]
+    B --> C[FastAPI Backend]
+    C --> D[Postgres]
+    C --> E[MQTT]
+    C --> F[VictoriaMetrics]
+    C --> G[MinIO]
+    H[Keycloak] --> C
+    I[Prometheus] --> C
 ```
 
 ### Stack highlights
