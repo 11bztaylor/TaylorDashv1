@@ -5,10 +5,60 @@ TaylorDash implements a flexible multi-view interface with tabbed navigation, al
 ## View Architecture
 
 ### Core Views
-- **Dashboard**: Main operational overview with real-time metrics
-- **Projects**: Project-specific monitoring and management interface  
-- **Analytics**: Data analysis and reporting views
-- **Settings**: Configuration and preferences
+
+#### Status View
+Health dashboard providing comprehensive service monitoring and system observability. Features real-time metrics, service health indicators, and operational alerts.
+
+**Key Features:**
+- Real-time service health monitoring
+- System performance metrics dashboard
+- Alert and notification center
+- Infrastructure status overview
+- OpenTelemetry metrics visualization
+
+**RBAC Considerations:**
+- **viewer**: Read-only access to health status and metrics
+- **maintainer**: Additional access to diagnostic tools and logs
+- **admin**: Full access including system configuration and alerts management
+
+#### Canvas View
+Interactive React Flow canvas for visual workflow design and system architecture mapping. Enables drag-and-drop manipulation of nodes and edges representing system components and their relationships.
+
+**Key Features:**
+- Drag-and-drop node manipulation
+- Edge connection management
+- Visual workflow designer
+- Component relationship mapping
+- Interactive system architecture diagrams
+
+**RBAC Considerations:**
+- **viewer**: Read-only canvas viewing
+- **maintainer**: Canvas editing with save capabilities
+- **admin**: Full canvas management including template creation
+
+#### Projects View
+Comprehensive project management interface with role-based access control for organizing and tracking project progress.
+
+**Key Features:**
+- Project creation and management
+- Task tracking and progress monitoring
+- Resource allocation and timeline management
+- Collaboration tools and communication
+
+**RBAC Considerations:**
+- **viewer**: Read-only access to assigned projects
+- **maintainer**: Project creation, editing, and task management
+- **admin**: Full project management including deletion and advanced configuration
+
+#### Plugins View
+Plugin marketplace and access portal for discovering, installing, and managing TaylorDash extensions.
+
+**Key Features:**
+- Plugin discovery and browsing
+- Installation and configuration management
+- Plugin lifecycle management
+- Access control and permissions
+- Plugin performance monitoring
 
 ### Plugin Views
 TaylorDash supports extensible plugin-based views for custom functionality:
