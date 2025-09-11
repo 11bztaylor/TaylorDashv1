@@ -8,6 +8,7 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from fastapi import FastAPI, Depends, HTTPException, status
@@ -20,6 +21,10 @@ import uvicorn
 from .otel import init_telemetry
 from .database import init_db_pool, close_db_pool, get_db_pool
 from .mqtt_client import init_mqtt_processor, get_mqtt_processor
+from .security import verify_api_key, SecurityHeadersMiddleware
+from .logging_middleware import add_logging_middleware
+from .logging_utils import get_logger, init_logger
+from .routers import plugins
 
 # Metrics
 http_requests_total = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
@@ -28,6 +33,24 @@ http_request_duration = Histogram('http_request_duration_seconds', 'HTTP request
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+struct_logger = None  # Will be initialized with db pool
+
+async def init_plugin_schema():
+    """Initialize plugin database schema"""
+    try:
+        db_pool = await get_db_pool()
+        schema_path = Path(__file__).parent / "database" / "plugin_schema.sql"
+        
+        with open(schema_path, 'r') as f:
+            schema_sql = f.read()
+        
+        async with db_pool.acquire() as conn:
+            await conn.execute(schema_sql)
+            
+        logger.info("Plugin database schema initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize plugin schema: {e}")
+        # Don't raise here as we want the app to continue running
 
 # Pydantic Models for Projects CRUD
 class ProjectCreate(BaseModel):
@@ -68,6 +91,21 @@ async def lifespan(app: FastAPI):
     logger.info(f"Connecting to database with URL: {database_url[:database_url.find('@')+1]}***")
     await init_db_pool(database_url)
     
+    # Initialize plugin database schema
+    await init_plugin_schema()
+    
+    # Initialize structured logging with database pool
+    global struct_logger
+    db_pool = await get_db_pool()
+    struct_logger = init_logger(db_pool)
+    logger.info("Structured logging initialized with database integration")
+    
+    # Log system startup
+    await struct_logger.info(
+        "TaylorDash Backend starting up",
+        context={"database_url": database_url[:database_url.find('@')+1]+"***"}
+    )
+    
     # Initialize MQTT processor
     mqtt_host = os.getenv("MQTT_HOST", "localhost")
     mqtt_port = int(os.getenv("MQTT_PORT", "1883"))
@@ -104,14 +142,29 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware
+# Security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Add logging middleware (will be initialized with db pool in lifespan)
+add_logging_middleware(app)
+
+# CORS middleware - restrict origins for security
+allowed_origins = [
+    "http://localhost:3000",  # Frontend dev server
+    "http://localhost:5173",  # Vite dev server
+    "https://taylordash.local",  # Production domain
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Include plugin management router
+app.include_router(plugins.router)
 
 @app.get("/health/live")
 async def health_live():
@@ -139,7 +192,7 @@ async def metrics():
 
 # Events query endpoint
 @app.get("/api/v1/events")
-async def get_events(topic: str = None, kind: str = None, limit: int = 100):
+async def get_events(topic: str = None, kind: str = None, limit: int = 100, api_key: str = Depends(verify_api_key)):
     """Get events from mirror"""
     try:
         pool = await get_db_pool()
@@ -178,7 +231,7 @@ async def get_events(topic: str = None, kind: str = None, limit: int = 100):
 
 # DLQ monitoring endpoint
 @app.get("/api/v1/dlq")
-async def get_dlq_events(limit: int = 50):
+async def get_dlq_events(limit: int = 50, api_key: str = Depends(verify_api_key)):
     """Get DLQ events"""
     try:
         pool = await get_db_pool()
@@ -200,7 +253,7 @@ async def get_dlq_events(limit: int = 50):
         raise HTTPException(status_code=500, detail="Failed to fetch DLQ events")
 
 @app.get("/api/v1/health/stack")
-async def health_stack():
+async def health_stack(api_key: str = Depends(verify_api_key)):
     """Comprehensive stack health check"""
     services = {}
     overall_healthy = True
@@ -267,7 +320,7 @@ async def health_stack():
 
 # Project Management API Endpoints
 @app.get("/api/v1/projects")
-async def get_projects():
+async def get_projects(api_key: str = Depends(verify_api_key)):
     """Get all projects"""
     try:
         pool = await get_db_pool()
@@ -300,7 +353,7 @@ async def get_projects():
         raise HTTPException(status_code=500, detail="Failed to fetch projects")
 
 @app.get("/api/v1/projects/{project_id}")
-async def get_project(project_id: str):
+async def get_project(project_id: str, api_key: str = Depends(verify_api_key)):
     """Get project by ID"""
     try:
         pool = await get_db_pool()
@@ -341,7 +394,7 @@ async def get_project(project_id: str):
         raise HTTPException(status_code=500, detail="Failed to fetch project")
 
 @app.post("/api/v1/projects", status_code=status.HTTP_201_CREATED, response_model=ProjectResponse)
-async def create_project(project: ProjectCreate):
+async def create_project(project: ProjectCreate, api_key: str = Depends(verify_api_key)):
     """Create a new project"""
     try:
         pool = await get_db_pool()
@@ -400,7 +453,7 @@ async def create_project(project: ProjectCreate):
         raise HTTPException(status_code=500, detail="Failed to create project")
 
 @app.put("/api/v1/projects/{project_id}", response_model=ProjectResponse)
-async def update_project(project_id: str, project_update: ProjectUpdate):
+async def update_project(project_id: str, project_update: ProjectUpdate, api_key: str = Depends(verify_api_key)):
     """Update an existing project"""
     try:
         pool = await get_db_pool()
@@ -500,7 +553,7 @@ async def update_project(project_id: str, project_update: ProjectUpdate):
         raise HTTPException(status_code=500, detail="Failed to update project")
 
 @app.delete("/api/v1/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_project(project_id: str):
+async def delete_project(project_id: str, api_key: str = Depends(verify_api_key)):
     """Delete a project"""
     try:
         pool = await get_db_pool()
@@ -548,7 +601,7 @@ async def delete_project(project_id: str):
         raise HTTPException(status_code=500, detail="Failed to delete project")
 
 @app.get("/api/v1/projects/{project_id}/components")
-async def get_project_components(project_id: str):
+async def get_project_components(project_id: str, api_key: str = Depends(verify_api_key)):
     """Get components for a project"""
     try:
         pool = await get_db_pool()
@@ -578,7 +631,7 @@ async def get_project_components(project_id: str):
         raise HTTPException(status_code=500, detail="Failed to fetch components")
 
 @app.get("/api/v1/components/{component_id}/tasks")
-async def get_component_tasks(component_id: str):
+async def get_component_tasks(component_id: str, api_key: str = Depends(verify_api_key)):
     """Get tasks for a component"""
     try:
         pool = await get_db_pool()
@@ -614,7 +667,7 @@ async def get_component_tasks(component_id: str):
         raise HTTPException(status_code=500, detail="Failed to fetch tasks")
 
 @app.post("/api/v1/events/test")
-async def test_mqtt_event():
+async def test_mqtt_event(api_key: str = Depends(verify_api_key)):
     """Test MQTT event publishing"""
     try:
         mqtt_processor = await get_mqtt_processor()
@@ -627,6 +680,237 @@ async def test_mqtt_event():
     except Exception as e:
         logger.error(f"Failed to publish test event: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to publish test event: {e}")
+
+# Log viewing endpoints
+@app.get("/api/v1/logs")
+async def get_logs(
+    level: Optional[str] = None,
+    service: Optional[str] = None,
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    api_key: str = Depends(verify_api_key)
+):
+    """Get application logs with filtering"""
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            # Build query based on filters
+            where_conditions = []
+            params = []
+            param_count = 0
+            
+            if level and level != 'ALL':
+                param_count += 1
+                where_conditions.append(f"level = ${param_count}")
+                params.append(level)
+            
+            if service and service != 'ALL':
+                param_count += 1
+                where_conditions.append(f"service = ${param_count}")
+                params.append(service)
+            
+            if category and category != 'ALL':
+                param_count += 1
+                where_conditions.append(f"category = ${param_count}")
+                params.append(category)
+            
+            if search:
+                param_count += 1
+                where_conditions.append(f"(message ILIKE ${param_count} OR details ILIKE ${param_count})")
+                params.append(f"%{search}%")
+            
+            where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+            
+            query = f"""
+                SELECT id, timestamp, level, service, category, severity, message, details,
+                       trace_id, request_id, user_id, endpoint, method, status_code,
+                       duration_ms, error_code, context, environment
+                FROM logging.application_logs 
+                WHERE {where_clause}
+                ORDER BY timestamp DESC 
+                LIMIT ${param_count + 1} OFFSET ${param_count + 2}
+            """
+            
+            params.extend([limit, offset])
+            rows = await conn.fetch(query, *params)
+            
+            # Convert to dict and format timestamps
+            logs = []
+            for row in rows:
+                log_dict = dict(row)
+                log_dict['timestamp'] = log_dict['timestamp'].isoformat()
+                # Parse context JSON if it exists
+                if log_dict.get('context'):
+                    try:
+                        if isinstance(log_dict['context'], str):
+                            log_dict['context'] = json.loads(log_dict['context'])
+                    except json.JSONDecodeError:
+                        pass  # Keep as string if invalid JSON
+                logs.append(log_dict)
+            
+            # Get total count for pagination
+            count_query = f"SELECT COUNT(*) FROM logging.application_logs WHERE {where_clause}"
+            count_params = params[:-2]  # Remove limit and offset
+            total_count = await conn.fetchval(count_query, *count_params)
+            
+            return {
+                "logs": logs,
+                "total": total_count,
+                "limit": limit,
+                "offset": offset,
+                "has_more": total_count > offset + len(logs)
+            }
+    except Exception as e:
+        logger.error(f"Failed to fetch logs: {e}")
+        if struct_logger:
+            await struct_logger.error("Failed to fetch logs", exc=e, category="API")
+        raise HTTPException(status_code=500, detail="Failed to fetch logs")
+
+@app.get("/api/v1/logs/{log_id}")
+async def get_log_detail(log_id: int, api_key: str = Depends(verify_api_key)):
+    """Get detailed log entry by ID"""
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT * FROM logging.application_logs WHERE id = $1",
+                log_id
+            )
+            
+            if not row:
+                raise HTTPException(status_code=404, detail="Log entry not found")
+            
+            log_dict = dict(row)
+            log_dict['timestamp'] = log_dict['timestamp'].isoformat()
+            
+            # Parse context JSON
+            if log_dict.get('context'):
+                try:
+                    if isinstance(log_dict['context'], str):
+                        log_dict['context'] = json.loads(log_dict['context'])
+                except json.JSONDecodeError:
+                    pass
+            
+            return log_dict
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch log detail: {e}")
+        if struct_logger:
+            await struct_logger.error("Failed to fetch log detail", exc=e, category="API")
+        raise HTTPException(status_code=500, detail="Failed to fetch log detail")
+
+@app.get("/api/v1/logs/stats")
+async def get_log_stats(
+    hours: int = 24,
+    api_key: str = Depends(verify_api_key)
+):
+    """Get log statistics for dashboard"""
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            # Get stats for the last N hours
+            stats_query = """
+                SELECT 
+                    level,
+                    category,
+                    service,
+                    COUNT(*) as count,
+                    AVG(duration_ms) as avg_duration,
+                    MAX(duration_ms) as max_duration
+                FROM logging.application_logs 
+                WHERE timestamp >= NOW() - INTERVAL '%s hours'
+                GROUP BY level, category, service
+                ORDER BY count DESC
+            """
+            
+            stats = await conn.fetch(stats_query, hours)
+            
+            # Get error rate by hour
+            error_rate_query = """
+                SELECT 
+                    DATE_TRUNC('hour', timestamp) as hour,
+                    COUNT(*) FILTER (WHERE level = 'ERROR') as error_count,
+                    COUNT(*) as total_count
+                FROM logging.application_logs 
+                WHERE timestamp >= NOW() - INTERVAL '%s hours'
+                GROUP BY DATE_TRUNC('hour', timestamp)
+                ORDER BY hour DESC
+            """
+            
+            error_rates = await conn.fetch(error_rate_query, hours)
+            
+            # Format results
+            stats_formatted = []
+            for row in stats:
+                stat_dict = dict(row)
+                if stat_dict['avg_duration']:
+                    stat_dict['avg_duration'] = float(stat_dict['avg_duration'])
+                stats_formatted.append(stat_dict)
+            
+            error_rates_formatted = []
+            for row in error_rates:
+                rate_dict = dict(row)
+                rate_dict['hour'] = rate_dict['hour'].isoformat()
+                rate_dict['error_rate'] = (
+                    rate_dict['error_count'] / rate_dict['total_count'] 
+                    if rate_dict['total_count'] > 0 else 0
+                )
+                error_rates_formatted.append(rate_dict)
+            
+            return {
+                "timeframe_hours": hours,
+                "stats": stats_formatted,
+                "error_rates": error_rates_formatted,
+                "generated_at": datetime.now(timezone.utc).isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to fetch log stats: {e}")
+        if struct_logger:
+            await struct_logger.error("Failed to fetch log stats", exc=e, category="API")
+        raise HTTPException(status_code=500, detail="Failed to fetch log stats")
+
+@app.post("/api/v1/logs/test")
+async def test_logging(api_key: str = Depends(verify_api_key)):
+    """Test endpoint to generate various log entries"""
+    try:
+        if not struct_logger:
+            raise HTTPException(status_code=500, detail="Structured logging not initialized")
+        
+        # Generate test logs
+        await struct_logger.info(
+            "Test INFO log entry",
+            category="API",
+            severity="INFO",
+            context={"test": True, "endpoint": "/api/v1/logs/test"}
+        )
+        
+        await struct_logger.warn(
+            "Test WARNING log entry",
+            category="API", 
+            severity="MEDIUM",
+            context={"test": True, "warning_type": "test_warning"}
+        )
+        
+        await struct_logger.error(
+            "Test ERROR log entry",
+            category="API",
+            severity="HIGH",
+            error_code="TEST_ERROR",
+            details="This is a test error for demonstration",
+            context={"test": True, "error_type": "test_error"}
+        )
+        
+        return {
+            "message": "Test log entries created successfully",
+            "logs_created": 3,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to create test logs: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create test logs")
 
 @app.get("/")
 async def root():

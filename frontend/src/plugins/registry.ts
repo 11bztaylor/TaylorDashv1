@@ -17,6 +17,15 @@ export const PLUGINS: Plugin[] = [
     description: "Cyber-aesthetic dashboard with drag-and-drop widgets",
     version: "0.1.0",
     permissions: ["viewer"]
+  },
+  {
+    id: "projects-manager",
+    name: "Projects Manager",
+    kind: "ui",
+    path: "/plugins/projects-manager",
+    description: "Comprehensive project management with CRUD operations",
+    version: "0.1.0",
+    permissions: ["admin", "maintainer"]
   }
 ];
 

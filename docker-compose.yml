@@ -121,6 +121,7 @@ services:
     ports:
       - "1883:1883"
       - "8883:8883"
+      - "9001:9001"
     volumes:
       - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - ./infra/mosquitto/password_file:/mosquitto/config/password_file:ro
@@ -182,7 +183,8 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://taylordash:${POSTGRES_PASSWORD:-taylordash}@postgres:5432/taylordash
+      API_KEY: ${API_KEY:-taylordash-dev-key}
+      DATABASE_URL: postgresql://taylordash_app:password@postgres:5432/taylordash
       MQTT_HOST: mosquitto
       MQTT_PORT: 1883
       MQTT_USERNAME: taylordash

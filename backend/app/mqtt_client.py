@@ -15,6 +15,7 @@ from prometheus_client import Counter, Histogram, Gauge
 import asyncpg
 
 from .otel import get_tracer
+from .logging_utils import get_logger, MQTTError
 
 # Metrics
 mqtt_ingest_total = Counter('taylor_ingest_total', 'Total MQTT events ingested', ['topic', 'kind'])
@@ -47,6 +48,18 @@ class MQTTEventProcessor:
         """Start MQTT client with reconnect logic"""
         self.running = True
         retry_count = 0
+        struct_logger = get_logger()
+        
+        await struct_logger.info(
+            "Starting MQTT processor",
+            category="MQTT",
+            severity="INFO",
+            context={
+                "broker_host": self.broker_host,
+                "broker_port": self.broker_port,
+                "max_retries": self.max_retries
+            }
+        )
         
         while self.running:
             try:
@@ -56,10 +69,33 @@ class MQTTEventProcessor:
                 retry_count += 1
                 if retry_count <= self.max_retries:
                     delay = min(self.base_delay * (2 ** (retry_count - 1)), self.max_delay)
-                    logger.warning(f"MQTT connection failed, retrying in {delay}s: {e}")
+                    
+                    await struct_logger.warn(
+                        f"MQTT connection failed, retrying in {delay}s",
+                        category="MQTT",
+                        severity="MEDIUM",
+                        context={
+                            "retry_count": retry_count,
+                            "delay_seconds": delay,
+                            "broker_host": self.broker_host,
+                            "error": str(e)
+                        },
+                        details=str(e)
+                    )
+                    
                     await asyncio.sleep(delay)
                 else:
-                    logger.error(f"MQTT max retries exceeded: {e}")
+                    await struct_logger.error(
+                        "MQTT max retries exceeded",
+                        exc=MQTTError("Connection failed after maximum retries", str(e)),
+                        category="MQTT",
+                        severity="CRITICAL",
+                        context={
+                            "max_retries": self.max_retries,
+                            "broker_host": self.broker_host,
+                            "final_error": str(e)
+                        }
+                    )
                     break
     
     async def _connect_and_process(self):
@@ -165,8 +201,8 @@ class MQTTEventProcessor:
             logger.error(f"Failed to send to DLQ: {e}")
     
     async def publish_event(self, topic: str, kind: str, payload: Dict[str, Any], 
-                          trace_id: Optional[str] = None) -> str:
-        """Publish event with required metadata"""
+                          trace_id: Optional[str] = None, max_retries: int = 3) -> str:
+        """Publish event with required metadata and retry logic"""
         if not trace_id:
             trace_id = str(uuid.uuid4())
             
@@ -178,6 +214,8 @@ class MQTTEventProcessor:
             "payload": payload
         }
         
+        struct_logger = get_logger()
+        
         with tracer.start_as_current_span("mqtt.publish_event") as span:
             span.set_attributes({
                 "mqtt.topic": topic,
@@ -185,10 +223,70 @@ class MQTTEventProcessor:
                 "event.kind": kind
             })
             
-            if self.client:
-                await self.client.publish(topic, json.dumps(event), qos=1)
-                logger.debug(f"Published {kind} event to {topic}")
+            # Retry logic with exponential backoff
+            for attempt in range(max_retries):
+                try:
+                    if not self.client:
+                        raise MQTTError("MQTT client not connected", "Client instance is None")
+                    
+                    await self.client.publish(topic, json.dumps(event), qos=1)
+                    
+                    await struct_logger.debug(
+                        f"Published {kind} event to {topic}",
+                        category="MQTT",
+                        severity="INFO",
+                        trace_id=trace_id,
+                        context={
+                            "topic": topic,
+                            "kind": kind,
+                            "attempt": attempt + 1,
+                            "payload_size": len(json.dumps(payload))
+                        }
+                    )
+                    
+                    return trace_id
                 
+                except Exception as e:
+                    is_last_attempt = attempt == max_retries - 1
+                    
+                    if is_last_attempt:
+                        # Final attempt failed - send to DLQ and log error
+                        await self._send_to_dlq(topic, event, f"Publish failed after {max_retries} attempts: {e}")
+                        
+                        await struct_logger.error(
+                            f"Failed to publish {kind} event after {max_retries} attempts",
+                            exc=MQTTError("Event publishing failed", str(e)),
+                            category="MQTT",
+                            severity="HIGH",
+                            trace_id=trace_id,
+                            context={
+                                "topic": topic,
+                                "kind": kind,
+                                "max_retries": max_retries,
+                                "event": event
+                            }
+                        )
+                        raise MQTTError(f"Failed to publish event after {max_retries} attempts", str(e))
+                    else:
+                        # Retry with backoff
+                        delay = min(2 ** attempt, 10)  # Max 10s delay
+                        
+                        await struct_logger.warn(
+                            f"MQTT publish attempt {attempt + 1} failed, retrying in {delay}s",
+                            category="MQTT",
+                            severity="MEDIUM",
+                            trace_id=trace_id,
+                            context={
+                                "topic": topic,
+                                "kind": kind,
+                                "attempt": attempt + 1,
+                                "delay_seconds": delay,
+                                "error": str(e)
+                            }
+                        )
+                        
+                        await asyncio.sleep(delay)
+        
         return trace_id
     
     async def stop(self):

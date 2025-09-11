@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dashboard Widget</title>
+    <script src="https://cdn.taylordash.com/widgets/v1/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #374151;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #6b7280;
+            padding: 40px;
+        }
+        
+        .error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .last-updated {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>Project Dashboard</h1>
+            <div class="last-updated" id="lastUpdated">Last updated: Never</div>
+        </div>
+        
+        <div class="stats" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-value" id="projectCount">-</div>
+                <div class="stat-label">Total Projects</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="eventCount">-</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeProjects">-</div>
+                <div class="stat-label">Active Projects</div>
+            </div>
+        </div>
+        
+        <div class="charts">
+            <div class="chart-container">
+                <div class="chart-title">Project Activity</div>
+                <canvas id="projectChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Event Timeline</div>
+                <canvas id="eventChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ProjectDashboard {
+            constructor() {
+                this.config = {
+                    refreshInterval: 30000,
+                    showEventCount: true
+                };
+                
+                this.projectChart = null;
+                this.eventChart = null;
+                this.refreshTimer = null;
+                
+                this.init();
+            }
+            
+            async init() {
+                console.log('Initializing Project Dashboard Widget');
+                
+                // Load configuration from plugin system
+                this.loadConfig();
+                
+                // Set up message handling for configuration updates
+                this.setupMessageHandling();
+                
+                // Load initial data
+                await this.loadData();
+                
+                // Set up auto-refresh
+                this.startAutoRefresh();
+                
+                console.log('Dashboard initialized successfully');
+            }
+            
+            loadConfig() {
+                // Configuration would be injected by the plugin system
+                // For now, use defaults
+                const savedConfig = localStorage.getItem('project-dashboard-config');
+                if (savedConfig) {
+                    try {
+                        this.config = { ...this.config, ...JSON.parse(savedConfig) };
+                    } catch (e) {
+                        console.warn('Failed to parse saved config:', e);
+                    }
+                }
+            }
+            
+            setupMessageHandling() {
+                // Safe message handling with origin validation
+                window.addEventListener('message', (event) => {
+                    // Only accept messages from TaylorDash
+                    if (event.origin !== 'https://taylordash.com' && 
+                        event.origin !== window.location.origin) {
+                        return;
+                    }
+                    
+                    if (event.data.type === 'config-update') {
+                        this.updateConfig(event.data.config);
+                    } else if (event.data.type === 'refresh') {
+                        this.loadData();
+                    }
+                });
+            }
+            
+            updateConfig(newConfig) {
+                this.config = { ...this.config, ...newConfig };
+                localStorage.setItem('project-dashboard-config', JSON.stringify(this.config));
+                
+                // Restart auto-refresh with new interval
+                this.startAutoRefresh();
+                
+                // Re-render with new config
+                this.loadData();
+            }
+            
+            async loadData() {
+                try {
+                    document.getElementById('lastUpdated').textContent = 
+                        `Loading... (${new Date().toLocaleTimeString()})`;
+                    
+                    // Load projects data
+                    const projectsResponse = await fetch('/api/v1/projects', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!projectsResponse.ok) {
+                        throw new Error(`Projects API error: ${projectsResponse.status}`);
+                    }
+                    
+                    const projects = await projectsResponse.json();
+                    
+                    // Load events data if enabled
+                    let events = [];
+                    if (this.config.showEventCount) {
+                        try {
+                            const eventsResponse = await fetch('/api/v1/events', {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            if (eventsResponse.ok) {
+                                events = await eventsResponse.json();
+                            }
+                        } catch (e) {
+                            console.warn('Failed to load events:', e);
+                        }
+                    }
+                    
+                    this.renderData(projects, events);
+                    
+                    document.getElementById('lastUpdated').textContent = 
+                        `Last updated: ${new Date().toLocaleTimeString()}`;
+                    
+                } catch (error) {
+                    console.error('Failed to load dashboard data:', error);
+                    this.renderError(error.message);
+                }
+            }
+            
+            renderData(projects, events) {
+                // Update stats
+                document.getElementById('projectCount').textContent = projects.length;
+                document.getElementById('eventCount').textContent = events.length;
+                
+                const activeProjects = projects.filter(p => p.status === 'active').length;
+                document.getElementById('activeProjects').textContent = activeProjects;
+                
+                // Render charts
+                this.renderProjectChart(projects);
+                this.renderEventChart(events);
+            }
+            
+            renderProjectChart(projects) {
+                const ctx = document.getElementById('projectChart').getContext('2d');
+                
+                if (this.projectChart) {
+                    this.projectChart.destroy();
+                }
+                
+                const statusCounts = projects.reduce((acc, project) => {
+                    acc[project.status || 'unknown'] = (acc[project.status || 'unknown'] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                this.projectChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(statusCounts),
+                        datasets: [{
+                            data: Object.values(statusCounts),
+                            backgroundColor: [
+                                '#10b981',
+                                '#f59e0b', 
+                                '#ef4444',
+                                '#6b7280'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            renderEventChart(events) {
+                if (!this.config.showEventCount) return;
+                
+                const ctx = document.getElementById('eventChart').getContext('2d');
+                
+                if (this.eventChart) {
+                    this.eventChart.destroy();
+                }
+                
+                // Group events by day for the last 7 days
+                const last7Days = [];
+                const eventsByDay = {};
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    last7Days.push(dateStr);
+                    eventsByDay[dateStr] = 0;
+                }
+                
+                events.forEach(event => {
+                    const eventDate = new Date(event.timestamp).toISOString().split('T')[0];
+                    if (eventsByDay.hasOwnProperty(eventDate)) {
+                        eventsByDay[eventDate]++;
+                    }
+                });
+                
+                this.eventChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: last7Days.map(date => new Date(date).toLocaleDateString()),
+                        datasets: [{
+                            label: 'Events',
+                            data: last7Days.map(date => eventsByDay[date]),
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+            
+            renderError(message) {
+                const statsContainer = document.getElementById('statsContainer');
+                statsContainer.innerHTML = `
+                    <div class="error">
+                        <strong>Error loading dashboard data:</strong> ${message}
+                    </div>
+                `;
+            }
+            
+            startAutoRefresh() {
+                if (this.refreshTimer) {
+                    clearInterval(this.refreshTimer);
+                }
+                
+                if (this.config.refreshInterval > 0) {
+                    this.refreshTimer = setInterval(() => {
+                        this.loadData();
+                    }, this.config.refreshInterval);
+                }
+            }
+            
+            destroy() {
+                if (this.refreshTimer) {
+                    clearInterval(this.refreshTimer);
+                }
+                
+                if (this.projectChart) {
+                    this.projectChart.destroy();
+                }
+                
+                if (this.eventChart) {
+                    this.eventChart.destroy();
+                }
+            }
+        }
+        
+        // Initialize dashboard when DOM is ready
+        let dashboard;
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                dashboard = new ProjectDashboard();
+            });
+        } else {
+            dashboard = new ProjectDashboard();
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (dashboard) {
+                dashboard.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

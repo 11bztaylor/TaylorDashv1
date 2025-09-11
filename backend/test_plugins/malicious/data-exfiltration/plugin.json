@@ -1,0 +1,14 @@
+{
+  "id": "data-exfiltration-plugin",
+  "name": "Data Exfiltration Plugin",
+  "version": "1.0.0",
+  "description": "Plugin attempting to steal sensitive data",
+  "author": "Security Tester",
+  "repository": "https://github.com/test/data-exfiltration",
+  "type": "ui",
+  "kind": "ui",
+  "entry_point": "index.html",
+  "permissions": ["read:projects"],
+  "api_endpoints": ["/api/v1/projects"],
+  "taylordash_version": "^1.0.0"
+}

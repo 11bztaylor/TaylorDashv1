@@ -1,0 +1,177 @@
+{
+  "timestamp": "2025-09-11T19:36:41.557637+00:00",
+  "overall_status": "GOOD",
+  "tests_passed": 19,
+  "tests_failed": 2,
+  "test_results": {
+    "backend_liveness": {
+      "status": "PASS",
+      "message": "Backend liveness check successful",
+      "timestamp": "2025-09-11T19:36:41.727500+00:00",
+      "details": {}
+    },
+    "backend_readiness": {
+      "status": "PASS",
+      "message": "Backend readiness check successful",
+      "timestamp": "2025-09-11T19:36:41.897981+00:00",
+      "details": {}
+    },
+    "stack_health": {
+      "status": "PASS",
+      "message": "Stack health check successful",
+      "timestamp": "2025-09-11T19:36:42.056054+00:00",
+      "details": {
+        "overall_status": "healthy",
+        "services": {
+          "database": {
+            "status": "healthy",
+            "type": "postgresql",
+            "message": "Database is connected and responsive"
+          },
+          "mqtt": {
+            "status": "healthy",
+            "type": "mqtt",
+            "message": "MQTT processor is running and connected"
+          },
+          "api": {
+            "status": "healthy",
+            "type": "fastapi",
+            "message": "API server is running"
+          }
+        },
+        "timestamp": "2025-09-11T19:36:41.980510+00:00"
+      }
+    },
+    "auth_protection": {
+      "status": "PASS",
+      "message": "Unauthenticated access properly blocked",
+      "timestamp": "2025-09-11T19:36:42.213246+00:00",
+      "details": {}
+    },
+    "invalid_key_protection": {
+      "status": "PASS",
+      "message": "Invalid API key properly rejected",
+      "timestamp": "2025-09-11T19:36:42.373368+00:00",
+      "details": {}
+    },
+    "valid_key_access": {
+      "status": "PASS",
+      "message": "Valid API key accepted",
+      "timestamp": "2025-09-11T19:36:42.544320+00:00",
+      "details": {}
+    },
+    "db_read_projects": {
+      "status": "PASS",
+      "message": "Database read successful, found 20 projects",
+      "timestamp": "2025-09-11T19:36:42.699335+00:00",
+      "details": {}
+    },
+    "db_write_create": {
+      "status": "PASS",
+      "message": "Database create successful, project ID: 1d33b87f-42be-4942-b62c-cdd0cc43028e",
+      "timestamp": "2025-09-11T19:36:42.858155+00:00",
+      "details": {}
+    },
+    "db_update": {
+      "status": "PASS",
+      "message": "Database update successful",
+      "timestamp": "2025-09-11T19:36:43.020237+00:00",
+      "details": {}
+    },
+    "db_delete": {
+      "status": "PASS",
+      "message": "Database delete successful",
+      "timestamp": "2025-09-11T19:36:43.207638+00:00",
+      "details": {}
+    },
+    "mqtt_publish_api": {
+      "status": "PASS",
+      "message": "MQTT event published via API, trace: 38ba432e-4d65-4f73-a296-57c87bc5e83b",
+      "timestamp": "2025-09-11T19:36:43.359343+00:00",
+      "details": {}
+    },
+    "mqtt_event_storage": {
+      "status": "PASS",
+      "message": "MQTT event successfully stored in database",
+      "timestamp": "2025-09-11T19:36:46.530280+00:00",
+      "details": {}
+    },
+    "docker_services": {
+      "status": "FAIL",
+      "message": "No Docker services found",
+      "timestamp": "2025-09-11T19:36:47.130649+00:00",
+      "details": {}
+    },
+    "performance__health_ready": {
+      "status": "PASS",
+      "message": "Response time: 0.174s",
+      "timestamp": "2025-09-11T19:36:47.304805+00:00",
+      "details": {}
+    },
+    "performance__api_v1_projects": {
+      "status": "PASS",
+      "message": "Response time: 0.164s",
+      "timestamp": "2025-09-11T19:36:47.469116+00:00",
+      "details": {}
+    },
+    "performance__api_v1_events_limit=10": {
+      "status": "PASS",
+      "message": "Response time: 0.158s",
+      "timestamp": "2025-09-11T19:36:47.627317+00:00",
+      "details": {}
+    },
+    "performance__api_v1_health_stack": {
+      "status": "PASS",
+      "message": "Response time: 0.158s",
+      "timestamp": "2025-09-11T19:36:47.784970+00:00",
+      "details": {}
+    },
+    "error_404": {
+      "status": "PASS",
+      "message": "404 errors properly handled",
+      "timestamp": "2025-09-11T19:36:47.947429+00:00",
+      "details": {}
+    },
+    "error_invalid_id": {
+      "status": "FAIL",
+      "message": "Invalid ID not handled: 500",
+      "timestamp": "2025-09-11T19:36:48.109508+00:00",
+      "details": {}
+    },
+    "error_malformed_json": {
+      "status": "PASS",
+      "message": "Malformed JSON properly rejected",
+      "timestamp": "2025-09-11T19:36:48.364740+00:00",
+      "details": {}
+    },
+    "frontend_availability": {
+      "status": "PASS",
+      "message": "Frontend service is available",
+      "timestamp": "2025-09-11T19:36:48.399759+00:00",
+      "details": {}
+    }
+  },
+  "performance_metrics": {
+    "/health/ready": {
+      "single_request_time": 0.17406487464904785,
+      "status_code": 200
+    },
+    "/api/v1/projects": {
+      "single_request_time": 0.16425037384033203,
+      "status_code": 200
+    },
+    "/api/v1/events?limit=10": {
+      "single_request_time": 0.15814638137817383,
+      "status_code": 200
+    },
+    "/api/v1/health/stack": {
+      "single_request_time": 0.15759825706481934,
+      "status_code": 200
+    }
+  },
+  "security_validations": {},
+  "issues_found": [],
+  "recommendations": [
+    "System appears to be in good health - continue monitoring"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "project-dashboard",
+  "name": "Project Dashboard Widget",
+  "version": "1.2.0",
+  "description": "A dashboard widget to display project metrics and charts",
+  "author": "TaylorDash Team",
+  "repository": "https://github.com/taylordash/dashboard-widget",
+  "homepage": "https://taylordash.com/plugins/dashboard",
+  "type": "ui",
+  "kind": "ui",
+  "entry_point": "dashboard.html",
+  "permissions": [
+    "read:projects",
+    "read:events"
+  ],
+  "api_endpoints": [
+    "/api/v1/projects",
+    "/api/v1/events"
+  ],
+  "allowed_origins": [
+    "https://cdn.taylordash.com",
+    "https://api.chartjs.org"
+  ],
+  "taylordash_version": "^1.0.0",
+  "dependencies": {
+    "chart.js": "^3.9.1"
+  },
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "refreshInterval": {
+        "type": "number",
+        "minimum": 5000,
+        "default": 30000
+      },
+      "showEventCount": {
+        "type": "boolean",
+        "default": true
+      }
+    }
+  }
+}

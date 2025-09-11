@@ -78,20 +78,30 @@ graph LR
 git clone git@github.com:11bztaylor/TaylorDashv1.git
 cd TaylorDashv1
 
-# 2) Bring it up
+# 2) Prerequisites check
+docker compose version        # Verify command works
+netstat -tulpn | grep :1883   # Check MQTT port free
+
+# 3) Bring it up
 docker compose up -d
 
-# 3) Open
+# 4) Open
 #   Frontend:   https://tracker.local
 #   API docs:   https://tracker.local/api/docs
 #   Keycloak:   https://tracker.local/kc
 #   MinIO:      https://tracker.local/minio
 ```
 
-### Validation
+### 5-Minute Setup Validation
 
 ```bash
+# Quick health check
+docker compose ps
+
+# Full validation suite
 bash ops/validate_p1.sh     # healthchecks, RBAC 401, metrics, MQTT echo, plugin route smoke
+
+# Troubleshooting? See docs/infrastructure/quick-troubleshooting.md
 ```
 
 ## 🖥️ Midnight HUD Plugin (example)

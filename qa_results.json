@@ -1,0 +1,155 @@
+{
+  "timestamp": "2025-09-11T19:34:50.403710+00:00",
+  "overall_status": "NEEDS_ATTENTION",
+  "tests_passed": 1,
+  "tests_failed": 18,
+  "test_results": {
+    "backend_liveness": {
+      "status": "FAIL",
+      "message": "Backend liveness error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.492309+00:00",
+      "details": {}
+    },
+    "backend_readiness": {
+      "status": "FAIL",
+      "message": "Backend readiness error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.493919+00:00",
+      "details": {}
+    },
+    "stack_health": {
+      "status": "FAIL",
+      "message": "Stack health error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.495246+00:00",
+      "details": {}
+    },
+    "auth_protection": {
+      "status": "FAIL",
+      "message": "Auth protection test error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.496462+00:00",
+      "details": {}
+    },
+    "invalid_key_protection": {
+      "status": "FAIL",
+      "message": "Invalid key test error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.497686+00:00",
+      "details": {}
+    },
+    "valid_key_access": {
+      "status": "FAIL",
+      "message": "Valid key test error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.498911+00:00",
+      "details": {}
+    },
+    "db_read_projects": {
+      "status": "FAIL",
+      "message": "Database read error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.500073+00:00",
+      "details": {}
+    },
+    "db_write_create": {
+      "status": "FAIL",
+      "message": "Database create error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.501349+00:00",
+      "details": {}
+    },
+    "mqtt_publish_api": {
+      "status": "FAIL",
+      "message": "MQTT publish error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:50.502487+00:00",
+      "details": {}
+    },
+    "docker_services": {
+      "status": "FAIL",
+      "message": "No Docker services found",
+      "timestamp": "2025-09-11T19:34:51.068140+00:00",
+      "details": {}
+    },
+    "performance__health_ready": {
+      "status": "FAIL",
+      "message": "Slow response: 0.002s or error: 500",
+      "timestamp": "2025-09-11T19:34:51.070144+00:00",
+      "details": {}
+    },
+    "performance__api_v1_projects": {
+      "status": "FAIL",
+      "message": "Slow response: 0.001s or error: 500",
+      "timestamp": "2025-09-11T19:34:51.071490+00:00",
+      "details": {}
+    },
+    "performance__api_v1_events_limit=10": {
+      "status": "FAIL",
+      "message": "Slow response: 0.002s or error: 500",
+      "timestamp": "2025-09-11T19:34:51.073553+00:00",
+      "details": {}
+    },
+    "performance__api_v1_health_stack": {
+      "status": "FAIL",
+      "message": "Slow response: 0.001s or error: 500",
+      "timestamp": "2025-09-11T19:34:51.074901+00:00",
+      "details": {}
+    },
+    "concurrent_load": {
+      "status": "FAIL",
+      "message": "Poor concurrent performance: 0/10 successful, avg: 0.009s",
+      "timestamp": "2025-09-11T19:34:51.085792+00:00",
+      "details": {}
+    },
+    "error_404": {
+      "status": "FAIL",
+      "message": "404 test error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:51.087544+00:00",
+      "details": {}
+    },
+    "error_invalid_id": {
+      "status": "FAIL",
+      "message": "Invalid ID test error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:51.089083+00:00",
+      "details": {}
+    },
+    "error_malformed_json": {
+      "status": "FAIL",
+      "message": "Malformed JSON test error: All connection attempts failed",
+      "timestamp": "2025-09-11T19:34:51.090701+00:00",
+      "details": {}
+    },
+    "frontend_availability": {
+      "status": "PASS",
+      "message": "Frontend service is available",
+      "timestamp": "2025-09-11T19:34:51.105257+00:00",
+      "details": {}
+    }
+  },
+  "performance_metrics": {
+    "/health/ready": {
+      "single_request_time": 0.0018804073333740234,
+      "status_code": 500
+    },
+    "/api/v1/projects": {
+      "single_request_time": 0.0013039112091064453,
+      "status_code": 500
+    },
+    "/api/v1/events?limit=10": {
+      "single_request_time": 0.0020301342010498047,
+      "status_code": 500
+    },
+    "/api/v1/health/stack": {
+      "single_request_time": 0.0013129711151123047,
+      "status_code": 500
+    },
+    "concurrent_load": {
+      "total_requests": 10,
+      "successful_requests": 0,
+      "total_time": 0.010817527770996094,
+      "average_response_time": 0.009452271461486816,
+      "requests_per_second": 924.4256369567134
+    }
+  },
+  "security_validations": {},
+  "issues_found": [
+    "Poor performance under concurrent load"
+  ],
+  "recommendations": [
+    "Address the issues found before production deployment",
+    "Implement automated testing pipeline to catch issues earlier"
+  ]
+}

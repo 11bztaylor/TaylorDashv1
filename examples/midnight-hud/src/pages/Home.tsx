@@ -4,6 +4,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Minimize2, X, Pin, PinOff } from 'lucide-react';
 import { SystemWidget } from '../widgets/SystemWidget';
 import { ProjectWidget } from '../widgets/ProjectWidget';
+import { pluginEventService, SystemEvent, ProjectEvent } from '../services/eventService';
 import type { DashboardState, Widget, SystemData, ProjectData } from '../types/dashboard';
 
 interface HomeProps {
@@ -26,8 +27,74 @@ export const Home: React.FC<HomeProps> = ({ dashboardState, setDashboardState })
     { name: 'Analytics Engine', status: 'idle', progress: 42, lastUpdate: '1h ago' }
   ]);
 
-  // Simulate real-time data updates
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastEventTime, setLastEventTime] = useState<string>('');
+
+  // Set up real-time event subscriptions for system status
   useEffect(() => {
+    const unsubscribeSystem = pluginEventService.subscribeToSystemEvents((event: SystemEvent) => {
+      console.log('[MidnightHUD] Received system event:', event);
+      setLastEventTime(new Date().toLocaleTimeString());
+      
+      // Update system data based on event type
+      if (event.type === 'system_health') {
+        setSystemData(prev => ({
+          ...prev,
+          cpu: event.data.cpu || prev.cpu,
+          memory: event.data.memory || prev.memory,
+          disk: event.data.disk || prev.disk,
+          network: event.data.network || prev.network,
+          uptime: event.data.uptime || prev.uptime
+        }));
+      } else if (event.type === 'connection_status') {
+        const connected = event.data.status === 'connected';
+        setIsConnected(connected);
+      }
+    });
+
+    const unsubscribeProjects = pluginEventService.subscribeToProjectEvents((event: ProjectEvent) => {
+      console.log('[MidnightHUD] Received project event:', event);
+      setLastEventTime(new Date().toLocaleTimeString());
+      
+      // Update project data based on event
+      switch (event.type) {
+        case 'project_created':
+          setProjectData(prev => [...prev, {
+            name: event.data.project_name,
+            status: event.data.status || 'active',
+            progress: event.data.progress || 0,
+            lastUpdate: 'Just now'
+          }]);
+          break;
+          
+        case 'project_updated':
+          setProjectData(prev => 
+            prev.map(project => 
+              project.name === event.data.project_name
+                ? { 
+                    ...project, 
+                    status: event.data.status || project.status,
+                    progress: event.data.progress || project.progress,
+                    lastUpdate: 'Just now'
+                  }
+                : project
+            )
+          );
+          break;
+          
+        case 'project_deleted':
+          setProjectData(prev => 
+            prev.filter(project => project.name !== event.data.project_name)
+          );
+          break;
+      }
+    });
+
+    // Check initial connection status
+    const connectionStatus = pluginEventService.getConnectionStatus();
+    setIsConnected(connectionStatus === 'ready');
+
+    // Keep the simulated data updates as fallback for demo purposes
     const interval = setInterval(() => {
       setSystemData(prev => ({
         ...prev,
@@ -40,7 +107,11 @@ export const Home: React.FC<HomeProps> = ({ dashboardState, setDashboardState })
       }));
     }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      unsubscribeSystem();
+      unsubscribeProjects();
+      clearInterval(interval);
+    };
   }, []);
 
   const updateWidget = (widgetId: string, updates: Partial<Widget>) => {
@@ -134,7 +205,14 @@ export const Home: React.FC<HomeProps> = ({ dashboardState, setDashboardState })
         <div className="absolute bottom-4 left-4 text-xs text-gray-500 space-y-1">
           <div>Widgets: {dashboardState.widgets.length}</div>
           <div>Active: {dashboardState.widgets.filter(w => !w.isMinimized).length}</div>
-          <div>Last update: {new Date().toLocaleTimeString()}</div>
+          <div>System: {new Date().toLocaleTimeString()}</div>
+          {lastEventTime && (
+            <div>Event: {lastEventTime}</div>
+          )}
+          <div className="flex items-center space-x-2">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+            <span>{isConnected ? 'Live' : 'Offline'}</span>
+          </div>
         </div>
       </div>
     </DndProvider>

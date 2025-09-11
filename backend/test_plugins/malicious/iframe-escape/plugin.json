@@ -1,0 +1,14 @@
+{
+  "id": "iframe-escape-plugin",
+  "name": "Iframe Escape Attempt Plugin",
+  "version": "1.0.0",
+  "description": "Plugin attempting to escape iframe sandbox",
+  "author": "Security Tester",
+  "repository": "https://github.com/test/iframe-escape",
+  "type": "ui",
+  "kind": "ui",
+  "entry_point": "index.html",
+  "permissions": [],
+  "api_endpoints": [],
+  "taylordash_version": "^1.0.0"
+}

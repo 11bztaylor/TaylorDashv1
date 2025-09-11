@@ -10,16 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reactflow/background": "^11.3.13",
+    "@reactflow/controls": "^11.2.13",
+    "@reactflow/core": "^11.10.4",
+    "@reactflow/minimap": "^11.7.14",
+    "axios": "^1.5.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.279.0",
+    "mqtt": "^5.14.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.15.0",
-    "@reactflow/core": "^11.10.4",
-    "@reactflow/controls": "^11.2.13",
-    "@reactflow/background": "^11.3.13",
-    "@reactflow/minimap": "^11.7.14",
-    "lucide-react": "^0.279.0",
-    "axios": "^1.5.0",
-    "clsx": "^2.0.0"
+    "react-router-dom": "^6.15.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
