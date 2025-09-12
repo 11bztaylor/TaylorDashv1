@@ -3,8 +3,10 @@ node_modules/
 frontend/.next/
 frontend/dist/
 frontend/build/
+frontend/.vite/
 *.log
 pnpm-lock.yaml
+package-lock.json
 
 # Python / backend
 __pycache__/
@@ -44,3 +46,15 @@ docs/ops/_lint_probe.md
 bad.env
 # Cleanup trash folder
 trash/
+
+# Security - NEVER commit these!
+certs/
+*.key
+*.crt
+*.pem
+
+# Infrastructure configs (generated locally)
+infra/postgres/
+infra/timescale/
+infra/traefik/
+infra/grafana/
