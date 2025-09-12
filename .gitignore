@@ -42,3 +42,5 @@ Thumbs.db
 # Temporary test files
 docs/ops/_lint_probe.md
 bad.env
+# Cleanup trash folder
+trash/
