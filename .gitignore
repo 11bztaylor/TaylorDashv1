@@ -58,3 +58,28 @@ infra/postgres/
 infra/timescale/
 infra/traefik/
 infra/grafana/
+
+# Development bloat
+*.png
+*.jpg
+*.jpeg
+test_screenshots/
+test_screenshots_fixed/
+backend/venv/
+comprehensive_ui_test*.json
+*.py
+page_source.html
+overview_export/
+state/run_journal/*.jsonl
+
+# Secrets
+*.key
+*.pem
+*.env
+.env.*
+secrets/
+
+# Large files
+*.pdf
+*.zip
+*.tar.gz
