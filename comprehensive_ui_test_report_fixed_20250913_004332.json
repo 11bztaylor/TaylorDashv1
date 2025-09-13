@@ -1,0 +1,330 @@
+{
+  "test_summary": {
+    "total_tests": 38,
+    "passed": 38,
+    "failed": 0,
+    "partial": 0,
+    "success_rate": "100.0%",
+    "quality_score": "100.0%",
+    "overall_score": "10.0/10"
+  },
+  "category_results": {
+    "Authentication": 3,
+    "Navigation": 13,
+    "Plugin System": 14,
+    "Responsive Design": 6,
+    "User Experience": 1,
+    "Error Handling": 3,
+    "Accessibility": 2
+  },
+  "performance_metrics": {
+    "login_page": {
+      "url": "http://localhost:5176",
+      "response_time": 0.41278719902038574,
+      "total_load_time": 1.0926992893218994,
+      "status_code": 200
+    },
+    "plugin_mcp_manager": {
+      "url": "http://localhost:5174",
+      "response_time": 0.2906324863433838,
+      "total_load_time": 0.8392055034637451,
+      "status_code": 200
+    },
+    "plugin_midnight_hud": {
+      "url": "http://localhost:5173",
+      "response_time": 0.42598557472229004,
+      "total_load_time": 0.9282581806182861,
+      "status_code": 200
+    },
+    "plugin_projects_manager": {
+      "url": "http://localhost:5175",
+      "response_time": 0.33360934257507324,
+      "total_load_time": 1.044245958328247,
+      "status_code": 200
+    },
+    "navigation_projects": 0.743781566619873,
+    "navigation_plugins": 0.07041239738464355,
+    "navigation_settings": 0.04538726806640625,
+    "navigation_dashboard": 0.052278995513916016
+  },
+  "detailed_results": [
+    {
+      "test_name": "Login Page Load",
+      "status": "PASS",
+      "details": "Page loaded in 1.09s",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/01_login_page_20250913_004221.png",
+      "timestamp": "2025-09-13T00:42:22.108497"
+    },
+    {
+      "test_name": "Login Form Elements",
+      "status": "PASS",
+      "details": "All form elements present",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:24.155729"
+    },
+    {
+      "test_name": "Successful Login",
+      "status": "PASS",
+      "details": "Successfully authenticated, current URL: http://localhost:5176/",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/02_after_login_20250913_004227.png",
+      "timestamp": "2025-09-13T00:42:27.634294"
+    },
+    {
+      "test_name": "Dashboard - Projects Panel",
+      "status": "PASS",
+      "details": "Element found and displayed",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:29.983844"
+    },
+    {
+      "test_name": "Dashboard - Navigation Bar",
+      "status": "PASS",
+      "details": "Element found and displayed",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:29.993476"
+    },
+    {
+      "test_name": "Dashboard - User Info",
+      "status": "PASS",
+      "details": "Element found and displayed",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:30.004092"
+    },
+    {
+      "test_name": "Dashboard - System Status",
+      "status": "PASS",
+      "details": "Element found and displayed",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:30.012812"
+    },
+    {
+      "test_name": "Navigation - Projects",
+      "status": "PASS",
+      "details": "Successfully navigated to Projects",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/04_nav_projects_20250913_004231.png",
+      "timestamp": "2025-09-13T00:42:31.894389"
+    },
+    {
+      "test_name": "Navigation - Flow Canvas",
+      "status": "PASS",
+      "details": "Successfully navigated to Flow Canvas",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/04_nav_flow_canvas_20250913_004234.png",
+      "timestamp": "2025-09-13T00:42:34.816957"
+    },
+    {
+      "test_name": "Navigation - Plugins",
+      "status": "PASS",
+      "details": "Successfully navigated to Plugins",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/04_nav_plugins_20250913_004237.png",
+      "timestamp": "2025-09-13T00:42:37.753119"
+    },
+    {
+      "test_name": "Navigation - Settings",
+      "status": "PASS",
+      "details": "Successfully navigated to Settings",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/04_nav_settings_20250913_004240.png",
+      "timestamp": "2025-09-13T00:42:40.704475"
+    },
+    {
+      "test_name": "Plugin Store Load",
+      "status": "PASS",
+      "details": "Plugin store interface loaded successfully",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/05_plugin_store_20250913_004244.png",
+      "timestamp": "2025-09-13T00:42:44.982121"
+    },
+    {
+      "test_name": "Plugin Card - MCP Manager",
+      "status": "PASS",
+      "details": "Found 9 references",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:44.999122"
+    },
+    {
+      "test_name": "Plugin Card - Midnight HUD",
+      "status": "PASS",
+      "details": "Found 9 references",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:45.014554"
+    },
+    {
+      "test_name": "Plugin Card - Projects Manager",
+      "status": "PASS",
+      "details": "Found 9 references",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:42:45.030172"
+    },
+    {
+      "test_name": "Plugin Launch Buttons",
+      "status": "PASS",
+      "details": "Found 3 launch buttons",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/06_plugin_launch_buttons_20250913_004245.png",
+      "timestamp": "2025-09-13T00:42:45.180508"
+    },
+    {
+      "test_name": "Direct Plugin Access - MCP Manager",
+      "status": "PASS",
+      "details": "Plugin accessible at http://localhost:5174, load time: 0.84s",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/07_mcp_manager_direct_20250913_004246.png",
+      "timestamp": "2025-09-13T00:42:46.168638"
+    },
+    {
+      "test_name": "Embedded Plugin - MCP Manager",
+      "status": "PASS",
+      "details": "Plugin loaded in iframe",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/08_mcp_manager_embedded_20250913_004248.png",
+      "timestamp": "2025-09-13T00:42:48.512573"
+    },
+    {
+      "test_name": "Direct Plugin Access - Midnight HUD",
+      "status": "PASS",
+      "details": "Plugin accessible at http://localhost:5173, load time: 0.93s",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/07_midnight_hud_direct_20250913_004249.png",
+      "timestamp": "2025-09-13T00:42:49.560849"
+    },
+    {
+      "test_name": "Embedded Plugin - Midnight HUD",
+      "status": "PASS",
+      "details": "Plugin loaded in iframe",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/08_midnight_hud_embedded_20250913_004251.png",
+      "timestamp": "2025-09-13T00:42:51.851867"
+    },
+    {
+      "test_name": "Direct Plugin Access - Projects Manager",
+      "status": "PASS",
+      "details": "Plugin accessible at http://localhost:5175, load time: 1.04s",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/07_projects_manager_direct_20250913_004252.png",
+      "timestamp": "2025-09-13T00:42:53.270734"
+    },
+    {
+      "test_name": "Embedded Plugin - Projects Manager",
+      "status": "PASS",
+      "details": "Plugin loaded in iframe",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/08_projects_manager_embedded_20250913_004255.png",
+      "timestamp": "2025-09-13T00:42:55.563547"
+    },
+    {
+      "test_name": "Responsive - Desktop Large",
+      "status": "PASS",
+      "details": "Layout functional at 1920x1080",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/09_responsive_desktop_large_20250913_004258.png",
+      "timestamp": "2025-09-13T00:42:59.238724"
+    },
+    {
+      "test_name": "Responsive - Desktop Standard",
+      "status": "PASS",
+      "details": "Layout functional at 1366x768",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/09_responsive_desktop_standard_20250913_004302.png",
+      "timestamp": "2025-09-13T00:43:02.865227"
+    },
+    {
+      "test_name": "Responsive - Tablet Landscape",
+      "status": "PASS",
+      "details": "Layout functional at 1024x768",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/09_responsive_tablet_landscape_20250913_004306.png",
+      "timestamp": "2025-09-13T00:43:06.356079"
+    },
+    {
+      "test_name": "Responsive - Tablet Portrait",
+      "status": "PASS",
+      "details": "Layout functional at 768x1024",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/09_responsive_tablet_portrait_20250913_004309.png",
+      "timestamp": "2025-09-13T00:43:09.867128"
+    },
+    {
+      "test_name": "Responsive - Mobile Large",
+      "status": "PASS",
+      "details": "Layout functional at 414x896",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/09_responsive_mobile_large_20250913_004313.png",
+      "timestamp": "2025-09-13T00:43:13.420577"
+    },
+    {
+      "test_name": "Responsive - Mobile Standard",
+      "status": "PASS",
+      "details": "Layout functional at 375x667",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/09_responsive_mobile_standard_20250913_004316.png",
+      "timestamp": "2025-09-13T00:43:16.823421"
+    },
+    {
+      "test_name": "Navigation Speed - Projects",
+      "status": "PASS",
+      "details": "Navigation completed in 0.74s",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:43:17.891087"
+    },
+    {
+      "test_name": "Navigation Speed - Plugins",
+      "status": "PASS",
+      "details": "Navigation completed in 0.07s",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:43:18.474817"
+    },
+    {
+      "test_name": "Navigation Speed - Settings",
+      "status": "PASS",
+      "details": "Navigation completed in 0.05s",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:43:19.029071"
+    },
+    {
+      "test_name": "Navigation Speed - Dashboard",
+      "status": "PASS",
+      "details": "Navigation completed in 0.05s",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:43:19.595493"
+    },
+    {
+      "test_name": "Interactive Elements",
+      "status": "PASS",
+      "details": "5/5 elements responsive",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:43:22.166700"
+    },
+    {
+      "test_name": "Error Handling - nonexistent-page",
+      "status": "PASS",
+      "details": "Proper error page displayed",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/10_error_handling_nonexistent-page_20250913_004324.png",
+      "timestamp": "2025-09-13T00:43:24.667934"
+    },
+    {
+      "test_name": "Error Handling - route",
+      "status": "PASS",
+      "details": "Proper error page displayed",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/10_error_handling_route_20250913_004326.png",
+      "timestamp": "2025-09-13T00:43:27.218285"
+    },
+    {
+      "test_name": "Error Handling - fake-plugin",
+      "status": "PASS",
+      "details": "Proper error page displayed",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/10_error_handling_fake-plugin_20250913_004329.png",
+      "timestamp": "2025-09-13T00:43:29.469650"
+    },
+    {
+      "test_name": "Keyboard Navigation",
+      "status": "PASS",
+      "details": "Tab navigation working, focused: A",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed/11_keyboard_navigation_20250913_004332.png",
+      "timestamp": "2025-09-13T00:43:32.459138"
+    },
+    {
+      "test_name": "Semantic Markup",
+      "status": "PASS",
+      "details": "Good semantic structure: 24 headings, 1 nav, 1 buttons",
+      "screenshot": "",
+      "timestamp": "2025-09-13T00:43:32.526062"
+    }
+  ],
+  "screenshots_directory": "/TaylorProjects/TaylorDashv1/test_screenshots_fixed",
+  "timestamp": "2025-09-13T00:43:32.758233",
+  "test_environment": {
+    "frontend_url": "http://localhost:5176",
+    "plugin_urls": {
+      "mcp-manager": "http://localhost:5174",
+      "midnight-hud": "http://localhost:5173",
+      "projects-manager": "http://localhost:5175"
+    },
+    "browser": "Chromium",
+    "viewport": "1366x768"
+  }
+}

@@ -33,19 +33,233 @@ TaylorDash is a visual project command center. You describe what you want; the s
 - **Add-only UI**: plugin routes and a Midnight HUD example (draggable glass widgets with persisted state).
 - **Docs that scale**: [Diátaxis](https://diataxis.fr/) split (tutorials / how-tos / reference / explanation).
 
-## 🚀🚀 Architecture (Phase-1)
+## 🏗️ System Architecture & Design Patterns
+
+TaylorDash implements an **event-driven, add-only architecture** with microservice patterns optimized for single-node deployment. The system prioritizes extensibility, observability, and security through carefully chosen design patterns.
+
+### 🎯 Core Architectural Principles
+
+- **Add-Only Philosophy**: Extend functionality through adapters, plugins, and event consumers—never modify core components
+- **Event-Driven Communication**: MQTT message bus enables loose coupling and offline resilience
+- **Observability-First**: OpenTelemetry instrumentation from day one with comprehensive metrics
+- **Security by Design**: OIDC authentication, RBAC authorization, and plugin sandboxing
+- **Local-First**: Complete functionality without external dependencies post-setup
+
+### 🏛️ Architecture Overview (Phase-1)
 
 ```mermaid
-graph LR
-    A[React Frontend] --> B[Traefik]
-    B --> C[FastAPI Backend]
-    C --> D[Postgres]
-    C --> E[MQTT]
-    C --> F[VictoriaMetrics]
-    C --> G[MinIO]
-    H[Keycloak] --> C
-    I[Prometheus] --> C
+graph TB
+    subgraph "Edge Layer"
+        TF[Traefik<br/>TLS Termination<br/>Security Headers]
+    end
+
+    subgraph "Frontend Layer"
+        FE[React Frontend<br/>Context API<br/>Plugin Router]
+        PL[Plugin Iframes<br/>Sandboxed Execution]
+    end
+
+    subgraph "Backend Layer"
+        API[FastAPI Backend<br/>Async/Await<br/>Dependency Injection]
+        AUTH[Authentication<br/>JWT + RBAC]
+    end
+
+    subgraph "Event Layer"
+        MQTT[Mosquitto MQTT<br/>Event Bus<br/>Pub/Sub Pattern]
+    end
+
+    subgraph "Storage Layer"
+        PG[PostgreSQL<br/>Metadata + Events<br/>ACID Transactions]
+        TS[VictoriaMetrics<br/>Time-Series Data<br/>Metrics Storage]
+        OBJ[MinIO<br/>Object Storage<br/>Versioned Artifacts]
+    end
+
+    subgraph "Security Layer"
+        KC[Keycloak<br/>OIDC Provider<br/>Identity Management]
+    end
+
+    subgraph "Observability Layer"
+        PROM[Prometheus<br/>Metrics Collection]
+        OTEL[OpenTelemetry<br/>Traces + Logs]
+    end
+
+    TF --> FE
+    TF --> API
+    FE --> PL
+    API --> AUTH
+    API --> MQTT
+    API --> PG
+    API --> TS
+    API --> OBJ
+    AUTH --> KC
+    API --> OTEL
+    PROM --> API
+
+    style TF fill:#2d3748,stroke:#4a5568,color:#fff
+    style MQTT fill:#e53e3e,stroke:#c53030,color:#fff
+    style API fill:#3182ce,stroke:#2c5282,color:#fff
+    style PG fill:#38a169,stroke:#2f855a,color:#fff
 ```
+
+### 🎨 Design Patterns & Implementation
+
+#### **1. Event-Driven Architecture Pattern**
+- **Implementation**: MQTT message bus with JSON event contracts
+- **Benefits**: Loose coupling, horizontal scalability, offline resilience
+- **Message Schema**: All events include `trace_id` for distributed tracing
+- **Topics**: Hierarchical structure (`taylor/projects/created`, `taylor/plugins/installed`)
+
+#### **2. Add-Only Extension Pattern**
+- **Implementation**: Plugin registration system + adapter interfaces
+- **Benefits**: Zero-risk feature additions, backward compatibility
+- **Plugin Isolation**: Iframe sandboxing with controlled communication
+- **Extension Points**: Routes, event handlers, UI components
+
+#### **3. Dependency Injection Pattern (Backend)**
+- **Implementation**: FastAPI's dependency system for database, MQTT, auth
+- **Benefits**: Testability, loose coupling, resource management
+- **Scopes**: Singleton for connections, request-scoped for transactions
+
+#### **4. Context API Pattern (Frontend)**
+- **Implementation**: React Context for auth state, notifications, plugins
+- **Benefits**: Centralized state, prop drilling elimination
+- **State Management**: Immutable updates with proper invalidation
+
+#### **5. Repository Pattern**
+- **Implementation**: Database abstraction layer with async connection pooling
+- **Benefits**: Database independence, transaction management
+- **Connection Strategy**: Persistent pool with health checks
+
+### 🔄 Data Flow & Communication Patterns
+
+#### **Authentication Flow**
+```mermaid
+sequenceDiagram
+    participant FE as Frontend
+    participant API as FastAPI
+    participant KC as Keycloak
+    participant DB as PostgreSQL
+
+    FE->>API: Login Request
+    API->>KC: OIDC Token Exchange
+    KC-->>API: JWT + User Claims
+    API->>DB: Store Session
+    API-->>FE: Session Token + Expiry
+
+    Note over FE,DB: Session Management
+    FE->>API: API Request + Session Token
+    API->>DB: Validate Session
+    API-->>FE: Authorized Response
+```
+
+#### **Event Processing Flow**
+```mermaid
+sequenceDiagram
+    participant SRC as Event Source
+    participant MQTT as Message Bus
+    participant SUB as Event Subscriber
+    participant DB as PostgreSQL
+    participant OTEL as OpenTelemetry
+
+    SRC->>MQTT: Publish Event + Trace ID
+    MQTT->>SUB: Route to Subscribers
+    SUB->>OTEL: Create Span
+    SUB->>DB: Mirror Event
+    SUB->>OTEL: Complete Span
+
+    Note over SRC,OTEL: End-to-End Traceability
+```
+
+#### **Plugin Communication Pattern**
+```mermaid
+sequenceDiagram
+    participant Host as TaylorDash Host
+    participant IF as Plugin Iframe
+    participant API as Backend API
+
+    Host->>IF: Load Plugin + Config
+    IF->>Host: Register Capabilities
+    IF->>Host: Request API Access
+    Host->>API: Proxy Request + Auth
+    API-->>Host: Response + Validation
+    Host-->>IF: Filtered Response
+
+    Note over Host,API: Sandboxed Execution
+```
+
+### ⚡ Performance Considerations
+
+#### **Database Strategy**
+- **Connection Pooling**: AsyncPG pool with configurable min/max connections
+- **Query Optimization**: Indexed foreign keys, prepared statements
+- **Transaction Management**: Explicit boundaries for consistency
+- **Read Replicas**: Future scaling path for read-heavy workloads
+
+#### **Caching Strategy**
+- **Browser Caching**: Static assets with versioned URLs
+- **API Caching**: Conditional requests with ETags
+- **Session Caching**: Redis-ready session store design
+- **Plugin Caching**: Iframe persistence across navigation
+
+#### **Async Patterns**
+- **Backend**: Full async/await with proper error boundaries
+- **Frontend**: Concurrent API calls with Promise.allSettled
+- **Event Processing**: Non-blocking MQTT handlers with DLQ
+- **Resource Management**: Proper cleanup in finally blocks
+
+### 🔒 Security Model & Architecture
+
+#### **Authentication & Authorization**
+- **OIDC Integration**: Keycloak for enterprise-grade identity management
+- **Role-Based Access**: Admin, Maintainer, Viewer with granular permissions
+- **Session Management**: Short-lived tokens with secure refresh patterns
+- **API Security**: Bearer tokens + API key dual authentication
+
+#### **Plugin Security Model**
+- **Iframe Sandboxing**: Cross-origin isolation with controlled communication
+- **Permission Model**: Explicit capability grants per plugin
+- **API Proxying**: Backend validates all plugin API requests
+- **Content Security**: Strict CSP headers for XSS prevention
+
+#### **Network Security**
+- **TLS Termination**: Traefik with HSTS and security headers
+- **Internal Communication**: Encrypted service-to-service
+- **Secrets Management**: Environment variables + Docker secrets
+- **Local-First**: No external dependencies in production
+
+### 📊 Observability Architecture
+
+#### **OpenTelemetry Integration**
+- **Tracing**: End-to-end request tracing with correlation IDs
+- **Metrics**: Custom business metrics + system metrics
+- **Logging**: Structured logging with trace correlation
+- **Instrumentation**: Automatic + manual spans for key operations
+
+#### **Monitoring Strategy**
+- **Health Checks**: Deep health validation across all services
+- **Alerting**: Prometheus rules for critical system states
+- **Dashboards**: Grafana dashboards for operations visibility
+- **Performance**: Response time tracking + SLA monitoring
+
+### 🔧 Key Architectural Decisions
+
+#### **Technology Stack Rationale**
+- **FastAPI**: Async performance + automatic OpenAPI documentation
+- **React**: Component reusability + extensive ecosystem
+- **MQTT**: Lightweight pub/sub perfect for single-node deployment
+- **PostgreSQL**: ACID compliance + JSON support for flexibility
+- **Docker Compose**: Simple orchestration for local deployment
+
+#### **Storage Architecture Decisions**
+- **PostgreSQL for Metadata**: Normalized schema with referential integrity
+- **VictoriaMetrics for Time-Series**: High compression + retention policies
+- **MinIO for Artifacts**: Versioned storage with S3 compatibility
+- **Separation of Concerns**: Right storage engine for each data type
+
+#### **Security Architecture Decisions**
+- **Keycloak over Custom Auth**: Enterprise-grade security out of the box
+- **Plugin Isolation**: Safety over performance for extensibility
+- **Local-First**: Reduced attack surface vs cloud dependencies
+- **Defense in Depth**: Multiple security layers at each level
 
 ### Stack highlights
 

@@ -1,0 +1,50 @@
+{
+  "test_summary": {
+    "total_tests": 4,
+    "passed": 3,
+    "failed": 1,
+    "partial": 0,
+    "success_rate": "75.0%",
+    "overall_score": "7.5/10"
+  },
+  "performance_metrics": {
+    "login_page": {
+      "url": "http://localhost:5176",
+      "response_time": 0.46950221061706543,
+      "total_load_time": 1.096782922744751,
+      "status_code": 200
+    }
+  },
+  "test_results": [
+    {
+      "test_name": "Login Page Load",
+      "status": "PASS",
+      "details": "Page loaded in 1.10s",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots/01_login_page_20250913_003959.png",
+      "timestamp": "2025-09-13T00:39:59.699675"
+    },
+    {
+      "test_name": "Empty Form Validation",
+      "status": "PASS",
+      "details": "Form validation triggered correctly",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots/02_empty_form_validation_20250913_004000.png",
+      "timestamp": "2025-09-13T00:40:01.063024"
+    },
+    {
+      "test_name": "Invalid Credentials Test",
+      "status": "PASS",
+      "details": "Invalid credentials handled correctly",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots/03_invalid_credentials_20250913_004003.png",
+      "timestamp": "2025-09-13T00:40:03.357849"
+    },
+    {
+      "test_name": "Successful Login",
+      "status": "FAIL",
+      "details": "Login failed or no redirect",
+      "screenshot": "/TaylorProjects/TaylorDashv1/test_screenshots/04_login_failed_20250913_004013.png",
+      "timestamp": "2025-09-13T00:40:13.816210"
+    }
+  ],
+  "screenshots_directory": "/TaylorProjects/TaylorDashv1/test_screenshots",
+  "timestamp": "2025-09-13T00:40:13.876452"
+}

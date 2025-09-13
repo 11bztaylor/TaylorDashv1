@@ -15,3 +15,65 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Touch-friendly styles for tablet mode */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Enhanced button styles for tablet/touch */
+@media (pointer: coarse) {
+  button, 
+  input[type="button"], 
+  input[type="submit"] {
+    min-height: 44px;
+  }
+  
+  .bg-gray-700:hover {
+    background-color: rgb(55 65 81);
+  }
+  
+  .bg-gray-600:hover {
+    background-color: rgb(75 85 99);
+  }
+}
+
+/* Fullscreen styles */
+:-webkit-full-screen {
+  background: rgb(17 24 39); /* bg-gray-900 */
+}
+
+:-moz-full-screen {
+  background: rgb(17 24 39); /* bg-gray-900 */
+}
+
+:fullscreen {
+  background: rgb(17 24 39); /* bg-gray-900 */
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(31 41 55); /* bg-gray-800 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(75 85 99); /* bg-gray-600 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(107 114 128); /* bg-gray-500 */
+}

@@ -4,13 +4,13 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  Controls,
-  Background,
-  MiniMap,
   Connection,
   Edge,
   Node,
 } from '@reactflow/core';
+import { Controls } from '@reactflow/controls';
+import { Background } from '@reactflow/background';
+import { MiniMap } from '@reactflow/minimap';
 import '@reactflow/core/dist/style.css';
 
 const initialNodes: Node[] = [
@@ -55,7 +55,7 @@ const initialEdges: Edge[] = [
 ];
 
 export const FlowCanvas: React.FC = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getPluginById } from '../plugins/registry';
 import { eventBusService } from '../services/eventBus';
-import { ExternalLink, AlertTriangle, Loader, Wifi, WifiOff } from 'lucide-react';
+import { ExternalLink, AlertTriangle, Loader } from 'lucide-react';
 
 interface PluginPageProps {
   pluginId?: string;
@@ -58,13 +58,19 @@ export const PluginPage: React.FC<PluginPageProps> = ({ pluginId }) => {
   // Determine the plugin URL based on environment
   const getPluginUrl = (plugin: any) => {
     const isDevelopment = import.meta.env.DEV;
-    
-    if (plugin.id === 'projects-manager') {
-      return isDevelopment ? 'http://localhost:5175' : '/static/plugins/projects-manager';
+
+    // Use the current window's hostname to work from remote machines
+    const host = window.location.hostname;
+
+    // Canonical port assignments - STANDARDIZED
+    if (plugin.id === 'mcp-manager') {
+      return isDevelopment ? `http://${host}:5174` : '/static/plugins/mcp-manager';
     } else if (plugin.id === 'midnight-hud') {
-      return isDevelopment ? 'http://localhost:5173' : '/static/plugins/midnight-hud';
+      return isDevelopment ? `http://${host}:5175` : '/static/plugins/midnight-hud';
+    } else if (plugin.id === 'projects-manager') {
+      return isDevelopment ? `http://${host}:5176` : '/static/plugins/projects-manager';
     }
-    
+
     return '/404';
   };
 

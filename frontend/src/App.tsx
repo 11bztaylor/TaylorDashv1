@@ -1,24 +1,35 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, Folder, Settings, Layers, Plug } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { Home, Folder, Settings, Layers, Plug, LogOut, User } from 'lucide-react';
 import { ErrorBoundary, NotificationContainer, AsyncErrorBoundary } from './components/ErrorBoundary';
 import { PluginPage } from './components/PluginPage';
-import { apiCall, notificationManager, measureAsyncPerformance } from './utils/errorHandling';
+import { PluginsPage } from './components/PluginsPage';
+import { LoginPage } from './components/LoginPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { TabletModeLayout } from './components/TabletModeLayout';
+import { UserManagement } from './components/UserManagement';
+import { SessionWarning } from './components/SessionWarning';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { notificationManager, measureAsyncPerformance } from './utils/errorHandling';
 import { eventBusService } from './services/eventBus';
 
-// Simple inline components to avoid import issues
+// Connection status component with auth headers
 const ConnectionStatus: React.FC<{ onConnectionChange: (connected: boolean) => void }> = ({ onConnectionChange }) => {
   const [isConnected, setIsConnected] = useState(false);
   
   React.useEffect(() => {
-    // Simulate connection check
     const checkConnection = async () => {
       try {
-        const response = await fetch('/api/v1/health/stack', {
-          headers: {
-            'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key'
-          }
-        });
+        const sessionToken = localStorage.getItem('taylordash_session_token');
+        const headers: HeadersInit = {
+          'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key'
+        };
+        
+        if (sessionToken) {
+          headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
+        
+        const response = await fetch('/api/v1/health/stack', { headers });
         const connected = response.ok;
         setIsConnected(connected);
         onConnectionChange(connected);
@@ -50,11 +61,16 @@ const ProjectsList: React.FC<{ onProjectsChange?: () => void }> = ({ onProjectsC
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/projects', {
-        headers: {
-          'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key'
-        }
-      });
+      const sessionToken = localStorage.getItem('taylordash_session_token');
+      const headers: HeadersInit = {
+        'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key'
+      };
+      
+      if (sessionToken) {
+        headers['Authorization'] = `Bearer ${sessionToken}`;
+      }
+      
+      const response = await fetch('/api/v1/projects', { headers });
       if (response.ok) {
         const data = await response.json();
         setProjects(data.projects || []);
@@ -124,6 +140,7 @@ const FlowCanvas: React.FC = () => {
 
 // Layout wrapper component
 const Layout: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => {
+  const { user } = useAuth();
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -137,6 +154,15 @@ const Layout: React.FC<{ children: React.ReactNode; title: string }> = ({ childr
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Use tablet layout if user is in single view mode
+  if (user?.single_view_mode) {
+    return (
+      <TabletModeLayout title={title}>
+        {children}
+      </TabletModeLayout>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -152,6 +178,7 @@ const Layout: React.FC<{ children: React.ReactNode; title: string }> = ({ childr
               {currentTime}
             </div>
             <ConnectionStatus onConnectionChange={setIsConnected} />
+            {user && <UserInfo />}
           </div>
         </div>
       </header>
@@ -177,6 +204,57 @@ const Layout: React.FC<{ children: React.ReactNode; title: string }> = ({ childr
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// User info component for header
+const UserInfo: React.FC = () => {
+  const { user, logout } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    setShowMenu(false);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowMenu(!showMenu)}
+        className="flex items-center space-x-2 px-3 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+      >
+        <User className="w-4 h-4" />
+        <span className="text-sm">{user?.username}</span>
+        <span className="text-xs text-gray-400">({user?.role})</span>
+      </button>
+
+      {showMenu && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-10" 
+            onClick={() => setShowMenu(false)}
+          />
+          
+          {/* Menu */}
+          <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-20">
+            <div className="p-3 border-b border-gray-700">
+              <p className="text-sm font-medium text-white">{user?.username}</p>
+              <p className="text-xs text-gray-400">{user?.role}</p>
+            </div>
+            <div className="p-1">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-2 px-3 py-2 text-left text-sm text-red-300 hover:bg-gray-700 rounded transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -221,12 +299,19 @@ const ProjectCreateModal: React.FC<{ isOpen: boolean; onClose: () => void; onSuc
     setError('');
     
     try {
+      const sessionToken = localStorage.getItem('taylordash_session_token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key'
+      };
+      
+      if (sessionToken) {
+        headers['Authorization'] = `Bearer ${sessionToken}`;
+      }
+      
       const response = await fetch('/api/v1/projects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key',
-        },
+        headers,
         body: JSON.stringify({
           ...formData,
           metadata: {}
@@ -433,8 +518,17 @@ const LogViewer: React.FC = () => {
       if (filters.search) params.append('search', filters.search);
       params.append('limit', '100');
 
+      const sessionToken = localStorage.getItem('taylordash_session_token');
+      const headers: HeadersInit = {
+        'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key'
+      };
+      
+      if (sessionToken) {
+        headers['Authorization'] = `Bearer ${sessionToken}`;
+      }
+      
       const data = await measureAsyncPerformance(
-        () => apiCall(`/logs?${params.toString()}`),
+        () => fetch(`/api/v1/logs?${params.toString()}`, { headers }).then(res => res.json()),
         'fetchLogs',
         2000 // 2 second threshold
       );
@@ -687,6 +781,7 @@ const LogViewer: React.FC = () => {
 };
 
 const SettingsPage: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('settings');
 
   return (
@@ -705,6 +800,18 @@ const SettingsPage: React.FC = () => {
             >
               System Settings
             </button>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'users'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                User Management
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('logs')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -756,6 +863,8 @@ const SettingsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        ) : activeTab === 'users' && user?.role === 'admin' ? (
+          <UserManagement />
         ) : (
           <LogViewer />
         )}
@@ -766,19 +875,21 @@ const SettingsPage: React.FC = () => {
 
 const Navigation: React.FC = () => {
   const location = useLocation();
-  
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/projects', icon: Folder, label: 'Projects' },
     { path: '/flow', icon: Layers, label: 'Flow Canvas' },
-    { path: '/plugins/projects-manager', icon: Plug, label: 'Plugins' },
+    { path: '/plugins', icon: Plug, label: 'Plugins' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
+
+  // All navigation items are accessible to authenticated users
+  const filteredNavItems = navItems;
 
   return (
     <nav className="bg-gray-800 border-b border-gray-700 px-6 py-2">
       <div className="flex space-x-6">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
           return (
@@ -801,6 +912,76 @@ const Navigation: React.FC = () => {
   );
 };
 
+// Main App component with routing
+const AppContent: React.FC = () => {
+  const { user } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-gray-900">
+      {!user?.single_view_mode && (
+        <ErrorBoundary component="Navigation">
+          <Navigation />
+        </ErrorBoundary>
+      )}
+      
+      <Routes>
+        {/* Login Route */}
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* Protected Routes */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <ErrorBoundary component="Dashboard">
+              <Dashboard />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        } />
+        <Route path="/projects" element={
+          <ProtectedRoute>
+            <ErrorBoundary component="ProjectsPage">
+              <ProjectsPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        } />
+        <Route path="/flow" element={
+          <ProtectedRoute>
+            <ErrorBoundary component="FlowPage">
+              <FlowPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <ErrorBoundary component="SettingsPage">
+              <SettingsPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        } />
+        <Route path="/plugins" element={
+          <ProtectedRoute>
+            <ErrorBoundary component="PluginsPage">
+              <PluginsPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        } />
+        <Route path="/plugins/:pluginId" element={
+          <ProtectedRoute>
+            <ErrorBoundary component="PluginPage">
+              <PluginPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
+        } />
+        
+        {/* Catch all route - redirect to dashboard */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      
+      <NotificationContainer />
+      <SessionWarning />
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   // Initialize event bus service on app startup
   React.useEffect(() => {
@@ -813,43 +994,11 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary component="App">
       <AsyncErrorBoundary>
-        <Router>
-          <div className="min-h-screen bg-gray-900">
-            <ErrorBoundary component="Navigation">
-              <Navigation />
-            </ErrorBoundary>
-            
-            <Routes>
-              <Route path="/" element={
-                <ErrorBoundary component="Dashboard">
-                  <Dashboard />
-                </ErrorBoundary>
-              } />
-              <Route path="/projects" element={
-                <ErrorBoundary component="ProjectsPage">
-                  <ProjectsPage />
-                </ErrorBoundary>
-              } />
-              <Route path="/flow" element={
-                <ErrorBoundary component="FlowPage">
-                  <FlowPage />
-                </ErrorBoundary>
-              } />
-              <Route path="/settings" element={
-                <ErrorBoundary component="SettingsPage">
-                  <SettingsPage />
-                </ErrorBoundary>
-              } />
-              <Route path="/plugins/:pluginId" element={
-                <ErrorBoundary component="PluginPage">
-                  <PluginPage />
-                </ErrorBoundary>
-              } />
-            </Routes>
-            
-            <NotificationContainer />
-          </div>
-        </Router>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AuthProvider>
       </AsyncErrorBoundary>
     </ErrorBoundary>
   );
