@@ -85,3 +85,9 @@ secrets/
 *.tar.gz
 # Documentation backup (local only)
 docs-backup/
+
+# Test artifacts and outputs (should not be in git)
+test_screenshots/
+test_screenshots_fixed/
+overview_export/
+state/
