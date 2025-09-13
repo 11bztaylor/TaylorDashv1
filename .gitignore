@@ -91,3 +91,6 @@ test_screenshots/
 test_screenshots_fixed/
 overview_export/
 state/
+
+# Development process PDFs (too large for git)
+docs/development-process/*.pdf
