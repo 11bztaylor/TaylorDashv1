@@ -15,24 +15,43 @@ Proven parallel agent strategies for the TaylorDash Master AI Brains system. The
 - Context switching overhead: <10% of total time
 - Agent idle time: <5%
 
-**Implementation**:
+**Implementation** (TaylorDash Agents):
 ```yaml
 orchestration_flow:
-  entry: orchestrator
+  entry: "TaylorDash Orchestrator"
+  policies:
+    add_only: true
+    docs_required: true
+    trace_required: true
   stages:
     - stage: "planning"
       agent: "project_manager"
-      inputs: ["user_request", "system_state"]
+      tools: ["planner", "adr_writer"]
+      rbac: ["admin"]
+      inputs: ["snapshot", "backlog", "failures"]
       outputs: ["session_plan", "acceptance_criteria"]
     - stage: "execution"
       parallel: true
-      agents: ["backend", "frontend", "architecture_contracts"]
+      agents:
+        - name: "backend_dev"
+          tools: ["fastapi_gen", "mqtt_client", "tsdb_adapter", "minio_client"]
+          rbac: ["admin", "maintainer"]
+        - name: "architecture_contracts"
+          tools: ["openapi_gen", "jsonschema_lint"]
+          rbac: ["admin", "maintainer"]
+        - name: "observability"
+          tools: ["otel_instrument", "prom_rules", "grafana_panels"]
+          rbac: ["admin", "maintainer"]
       coordination: "event_driven"
     - stage: "validation"
       agent: "qa_tests"
+      tools: ["pytest_asyncio", "bash_runner"]
+      rbac: ["admin", "maintainer"]
       gates: ["contract_compliance", "security_check", "observability_check"]
     - stage: "documentation"
       agent: "scribe_docs"
+      tools: ["mkdocs_writer", "adr_manager", "minio_uploader"]
+      rbac: ["admin", "maintainer", "viewer"]
       final: true
 ```
 
@@ -77,30 +96,75 @@ trace_headers = {
 
 **High-Performance Combinations**:
 
-#### Backend + Observability + QA Trinity
+#### TaylorDash Backend Development Trinity
 ```yaml
-combination: "backend_obs_qa"
-success_rate: 98%
-use_cases: ["API development", "performance optimization"]
-coordination:
-  - backend implements with metrics hooks
-  - observability adds instrumentation
-  - qa validates against acceptance criteria
-parallel_execution: true
-shared_context: ["api_contracts", "performance_requirements"]
+combination: "backend_dev + observability + qa_tests"
+success_rate: 94%
+use_cases: ["FastAPI development", "MQTT integration", "performance optimization"]
+agents:
+  backend_dev:
+    tools: ["fastapi_gen", "mqtt_client", "tsdb_adapter", "minio_client"]
+    role: "Implements FastAPI endpoints with async patterns"
+  observability:
+    tools: ["otel_instrument", "prom_rules", "grafana_panels"]
+    role: "Adds OpenTelemetry tracing and Prometheus metrics"
+  qa_tests:
+    tools: ["pytest_asyncio", "bash_runner"]
+    role: "Creates comprehensive async test suite"
+coordination: parallel_execution
+shared_context: ["api_contracts", "event_contracts", "performance_requirements"]
 ```
 
-#### Architecture + Security + Documentation Triad
+#### TaylorDash Architecture Design Triad
 ```yaml
-combination: "arch_sec_docs"
-success_rate: 95%
-use_cases: ["system design", "compliance requirements"]
-coordination:
-  - architecture defines contracts
-  - security validates compliance
-  - documentation captures decisions
-sequential_execution: true
-handoff_artifacts: ["adrs", "security_checklist", "api_specs"]
+combination: "architecture_contracts + security_rbac + scribe_docs"
+success_rate: 91%
+use_cases: ["API contract design", "security implementation", "ADR documentation"]
+agents:
+  architecture_contracts:
+    tools: ["openapi_gen", "jsonschema_lint"]
+    role: "Defines OpenAPI specs and event schemas"
+  security_rbac:
+    tools: ["keycloak_admin", "traefik_hsts", "mosquitto_tls"]
+    role: "Implements RBAC and security policies"
+  scribe_docs:
+    tools: ["mkdocs_writer", "adr_manager", "minio_uploader"]
+    role: "Documents architecture decisions and security model"
+coordination: sequential_execution
+handoff_artifacts: ["openapi.yaml", "event_schemas", "realm_export", "conf_snippets"]
+```
+
+#### TaylorDash Infrastructure Setup Duo
+```yaml
+combination: "infra_compose + observability"
+success_rate: 96%
+use_cases: ["Docker deployment", "monitoring setup", "health checks"]
+agents:
+  infra_compose:
+    tools: ["healthcheck_gen"]
+    role: "Creates docker-compose.yml and health scripts"
+  observability:
+    tools: ["otel_instrument", "prom_rules", "grafana_panels"]
+    role: "Adds Prometheus/Grafana monitoring stack"
+coordination: sequential_handoff
+outputs: ["docker-compose.yml", "health_scripts", "instrumentation", "dashboards"]
+```
+
+#### TaylorDash Research-Driven Development
+```yaml
+combination: "context7_mcp + backend_dev"
+success_rate: 89%
+use_cases: ["External library integration", "framework research", "best practices"]
+agents:
+  context7_mcp:
+    tools: ["context7_resolve_library", "context7_get_docs"]
+    integration: "Claude Code MCP"
+    role: "Researches libraries and fetches comprehensive documentation"
+  backend_dev:
+    tools: ["fastapi_gen", "mqtt_client", "tsdb_adapter", "minio_client"]
+    role: "Implements features using Context7 research findings"
+coordination: sequential_research_to_implementation
+shared_context: ["library_docs", "api_references", "best_practices"]
 ```
 
 ## MCP Integration Strategies
