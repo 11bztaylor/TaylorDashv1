@@ -64,6 +64,15 @@
       "rbac": ["admin","maintainer","viewer"],
       "inputs": ["diffs","pr_links","journal"],
       "outputs": ["docs", "adr_updates", "resume_brief"]
+    },
+    {
+      "name": "context7_mcp",
+      "tools": ["context7_resolve_library", "context7_get_docs"],
+      "rbac": ["admin","maintainer"],
+      "inputs": ["library_names", "framework_queries"],
+      "outputs": ["library_docs", "api_references", "best_practices"],
+      "integration": "Claude Code MCP",
+      "description": "Enhanced development context management and code understanding via Context7 MCP server"
     }
   ]
 }

@@ -23,6 +23,23 @@ React-based frontend providing dynamic dashboard interface, plugin system UI, an
 - **Install packages**: `npm install [package-name]`
 - **Type checking**: `npm run type-check`
 
+## 🌍 Remote Access (No localhost)
+
+When you open the UI from another machine, configure the API/plugin origins:
+
+- Set `VITE_API_ORIGIN` to your backend origin (e.g., `http://SERVER_IP:8000` or `https://dash.local`).
+- If plugin UIs run on separate ports/hosts, set `VITE_PLUGIN_ORIGIN` or per‑plugin overrides:
+  - `VITE_PLUGIN_MCP_MANAGER`, `VITE_PLUGIN_MIDNIGHT_HUD`, `VITE_PLUGIN_PROJECTS_MANAGER`.
+
+Example `.env` (dev):
+```ini
+VITE_API_ORIGIN=http://127.0.0.1:8000
+VITE_PLUGIN_ORIGIN=http://127.0.0.1
+# VITE_PLUGIN_MIDNIGHT_HUD=http://127.0.0.1:5173
+```
+
+The app automatically attaches the session token to API requests; debug logs are shown only in development.
+
 ## 🔗 Dependencies
 - Depends on: Backend API, WebSocket connections
 - Used by: End users, plugin interfaces

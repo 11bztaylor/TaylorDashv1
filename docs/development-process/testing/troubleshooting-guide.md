@@ -1,5 +1,7 @@
 # Testing Troubleshooting Guide
 
+Remote access note: Commands below often use `localhost` for brevity. If you are working from another machine, replace `localhost` with your server IP/DNS. For the frontend, prefer configuring `VITE_API_ORIGIN` and relevant plugin variables to avoid hardcoded localhost in browser requests.
+
 **Last Updated:** 2025-09-12
 **Version:** 1.0
 

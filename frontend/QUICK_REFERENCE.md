@@ -86,26 +86,21 @@ const { user, login, logout, isAuthenticated } = useAuth();
 ```tsx
 import { apiClient } from '../services/api';
 
-// Automatic API key and auth headers
-const projects = await apiClient.get('/api/v1/projects');
+// Base URL is `${VITE_API_ORIGIN || window.location.origin}/api`
+// Session token (if present) is attached automatically via interceptor
+const projects = await apiClient.get('/v1/projects');
 const newProject = await apiClient.post('/api/v1/projects', projectData);
 ```
 
 ### Manual API Calls
 ```tsx
-const sessionToken = localStorage.getItem('taylordash_session_token');
-const headers: HeadersInit = {
-  'Content-Type': 'application/json',
-  'X-API-Key': import.meta.env.VITE_API_KEY || 'taylordash-dev-key'
-};
-
-if (sessionToken) {
-  headers['Authorization'] = `Bearer ${sessionToken}`;
-}
-
-const response = await fetch('/api/v1/projects', {
+const response = await fetch(`${(import.meta as any).env?.VITE_API_ORIGIN || window.location.origin}/api/v1/projects`, {
   method: 'POST',
-  headers,
+  headers: {
+    'Content-Type': 'application/json',
+    ...(localStorage.getItem('taylordash_session_token') ? { Authorization: `Bearer ${localStorage.getItem('taylordash_session_token')}` } : {}),
+    ...(import.meta.env.VITE_API_KEY ? { 'X-API-Key': import.meta.env.VITE_API_KEY } : {}),
+  },
   body: JSON.stringify(data)
 });
 ```
