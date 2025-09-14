@@ -1,35 +1,58 @@
 import axios from 'axios';
 import { ApiResponse, HealthResponse, Project } from '../types/api';
 
+// Prefer explicit origin for remote access, fall back to current origin
+const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || window.location.origin;
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_ORIGIN}/api`,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': import.meta.env.VITE_API_KEY,
+    // For dev: allow API key header if present. For prod, prefer session token only.
+    ...(import.meta.env.VITE_API_KEY ? { 'X-API-Key': import.meta.env.VITE_API_KEY } : {}),
   },
 });
 
-// Add request interceptor for debugging
+// Attach Bearer token (if present) and optional debug logging
 api.interceptors.request.use(
   (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    const token = localStorage.getItem('taylordash_session_token');
+    if (token) {
+      config.headers = {
+        ...(config.headers || {}),
+        Authorization: `Bearer ${token}`,
+      };
+    }
+    if (import.meta.env.MODE === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('API Request:', config.method?.toUpperCase(), config.url);
+    }
     return config;
   },
   (error) => {
-    console.error('API Request Error:', error);
+    if (import.meta.env.MODE === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('API Request Error:', error);
+    }
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor for debugging
+// Optional response logging in dev
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', response.status, response.config.url);
+    if (import.meta.env.MODE === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('API Response:', response.status, response.config.url);
+    }
     return response;
   },
   (error) => {
-    console.error('API Response Error:', error.response?.status, error.response?.data);
+    if (import.meta.env.MODE === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('API Response Error:', error.response?.status, error.response?.data);
+    }
     return Promise.reject(error);
   }
 );

@@ -181,10 +181,12 @@ services:
 
   # Backend API service
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    ports:
+      - "3000:8000"  # Expose backend on port 3000 for development
     environment:
       API_KEY: ${API_KEY:-taylordash-dev-key}
       DATABASE_URL: postgresql://taylordash_app:password@postgres:5432/taylordash

@@ -1,5 +1,6 @@
 // Auto-generated plugin registry
 // This file is automatically updated when plugins are installed/uninstalled
+// Note: Endpoints are environment-aware to avoid hardcoding localhost.
 
 export interface Plugin {
   id: string;
@@ -12,6 +13,9 @@ export interface Plugin {
   entry_point?: string;
 }
 
+// Base origin for plugin entry points. Defaults to current origin for remote access.
+const PLUGIN_ORIGIN = (import.meta as any).env?.VITE_PLUGIN_ORIGIN || window.location.origin;
+
 export const PLUGINS: Plugin[] = [
   {
     id: 'mcp-manager',
@@ -21,7 +25,8 @@ export const PLUGINS: Plugin[] = [
     kind: 'ui',
     type: 'react',
     path: '/plugins/mcp-manager',
-    entry_point: 'http://localhost:5177'
+    // Prefer env override (e.g., a dev server), else serve from same origin
+    entry_point: (import.meta as any).env?.VITE_PLUGIN_MCP_MANAGER || `${PLUGIN_ORIGIN}/plugins/mcp-manager`
   },
   {
     id: 'midnight-hud',
@@ -31,7 +36,7 @@ export const PLUGINS: Plugin[] = [
     kind: 'ui',
     type: 'react',
     path: '/plugins/midnight-hud',
-    entry_point: 'http://localhost:5173'
+    entry_point: (import.meta as any).env?.VITE_PLUGIN_MIDNIGHT_HUD || `${PLUGIN_ORIGIN}/plugins/midnight-hud`
   },
   {
     id: 'projects-manager',
@@ -41,7 +46,7 @@ export const PLUGINS: Plugin[] = [
     kind: 'ui',
     type: 'react',
     path: '/plugins/projects-manager',
-    entry_point: 'http://localhost:5175'
+    entry_point: (import.meta as any).env?.VITE_PLUGIN_PROJECTS_MANAGER || `${PLUGIN_ORIGIN}/plugins/projects-manager`
   }
 ];
 
